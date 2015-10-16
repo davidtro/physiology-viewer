@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-# from https://gist.github.com/mikofski/5851633
-# starting with version Phys_64.py, data Excel data file has column "person"
-# and names have been removed from column "title" (5/6/2015)
-# In version Phys_71.py, began adding functionality for displaying absolute values
+# Tabbed Notebook GUI derived from https://gist.github.com/mikofski/5851633
+# Notebook documentation at http://docs.python.org/py3k/library/tkinter.ttk.html?highlight=ttk#notebook
 """
 Created on Tue Feb 10 06:27:33 2015
 Physiology Viewer release version derived from Phys_74.py Oct 12, 2015
@@ -14,22 +12,11 @@ http://still-breathing.net/software/
 @author: David Trowbridge
 """
 
-# File: notebook.py
-#    http://docs.python.org/py3k/library/tkinter.ttk.html?highlight=ttk#notebook
- 
-#from tkinter import * # This was in the original notebook demo
-#matplotlib.use('TkAgg')
-#import matplotlib
-#import matplotlib.pyplot as plt
-#import pdb
-#import winpdb
 import tkinter as tk
 from tkinter import BOTH, TOP, X, Y, N, W, LEFT, END
 from tkinter import ttk, Frame, Text, IntVar, StringVar
 import numpy as np
 import pandas as pd
-#from pandas import DataFrame
-#import math # for the pow(x,y) function used in graphing absolute data
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.path import Path
@@ -145,7 +132,6 @@ current_index = 29 #Index for rec1
 def radar_factory(num_vars, frame='circle'):
     # Derived from http://matplotlib.org/examples/api/radar_chart.html
     """
-    
     Create a radar chart with `num_vars` axes.
 
     This function creates a RadarAxes projection and registers it.
@@ -156,7 +142,6 @@ def radar_factory(num_vars, frame='circle'):
         Number of variables for radar chart.
     frame : {'circle' | 'polygon'}
         Shape of frame surrounding axes.
-
     """
     # calculate evenly-spaced axis angles
     theta = 2*np.pi * np.linspace(0, 1-1./num_vars, num_vars)
@@ -178,7 +163,6 @@ def radar_factory(num_vars, frame='circle'):
         raise ValueError('unknown value for `frame`: %s' % frame)
 
     class RadarAxes(PolarAxes):
-
         name = 'radar'
         # use 1 line segment to connect specified points
         RESOLUTION = 1
@@ -230,9 +214,9 @@ def radar_factory(num_vars, frame='circle'):
     register_projection(RadarAxes)
     return theta
 
-
 def unit_poly_verts(theta):
-    """Return vertices of polygon for subplot axes.
+    """
+    Return vertices of polygon for subplot axes.
 
     This polygon is circumscribed by a unit circle centered at (0.5, 0.5)
     """
@@ -252,7 +236,6 @@ class PV(ttk.Frame):
         self.recording_var = StringVar()
         self.title_var = StringVar()
         self.person_var = StringVar()
-#        self.person_title_var = StringVar()
         self.subject_var = StringVar()
         self.date_time_var = StringVar()
         self.duration_var = StringVar()
@@ -339,11 +322,8 @@ class PV(ttk.Frame):
         self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
         self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
         self.sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
-        
 #        interval1 = str(self.interval1_var.get())
 #        print('interval1 = '+str(interval1))
-        
-        
         self.sva[0][0].set('entire session') # Initial line is 
         # initialized with ti=0, tf=duration
         self.sva[0][1].set('0')
@@ -380,16 +360,12 @@ class PV(ttk.Frame):
         self.frame = ttk.Frame(nb, height='4i', width='6i', name='session')
         # widgets to be displayed on 'Session' tab
             
-#        lbl0 = ttk.Label(frame, textvariable=self.index_var, name='sess_index')
-#        spn1 = tk.Spinbox(frame, textvariable=self.index_var, name='sess_index')
         self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
 #        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.person_title_var, state='readonly')
         sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
         self.cbx1['values'] = [row for row in sessions_list]
-        self.cbx1.current(1) # Sets current value to first session involving brain waves
-#        self.cbx1['values'] = [row for row in self.sessions_df['title']]
+        self.cbx1.current(29) # Sets current value to first session involving brain waves
         self.cbx1.bind("<<ComboboxSelected>>", self.update_session_data)
-#        cbx1.current(current_index)
         
         lbl1 = ttk.Label(self.frame, width=6, textvariable=self.index_var)
         lbl2 = ttk.Label(self.frame, width=6, textvariable=self.recording_var)
@@ -397,8 +373,6 @@ class PV(ttk.Frame):
         etr2 = ttk.Entry(self.frame, width=24, textvariable=self.date_time_var)
         etr3 = ttk.Entry(self.frame, width=8, textvariable=self.duration_var)
         self.txt1 = Text(self.frame, width=50, height=10, wrap=tk.WORD)
-#        sbar = Scrollbar(frame)
-#        notes = self.notes_var.get()
         notes = self.sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
@@ -409,8 +383,6 @@ class PV(ttk.Frame):
         lbl3 = ttk.Label(self.frame, width=6, textvariable=self.sample_rate_var)
         btn1 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
         
-#        lbl0.grid(row=1, column=1)
-#        spn1.grid(row=1, column=1, sticky=W)
         self.cbx1.grid(row=1, column=2, columnspan=3, sticky=W)
 #        etr1.grid(row=1, column=2, columnspan=2)
         lbl1.grid(row=1, column=1, sticky=W)
@@ -424,7 +396,6 @@ class PV(ttk.Frame):
         chk3.grid(row=5, column=5, sticky=W)
         lbl3.grid(row=6, column=5, sticky=W)
         btn1.grid(row=7, column=5, sticky=W)
-        
         
         # position and set resize behaviour
 #        lbl.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
@@ -527,10 +498,6 @@ class PV(ttk.Frame):
             for i in range(len(freqbands)):
                 for j in range(len(locations[i])-1, 0, -1): # omit average value; step down for proper radar display
                     values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]]+1).mean())
-#                    values_list.append(np.power(10,self.absolute_df[freqbands[i]][t_range][locations[i][j]]).mean())
-                    # Add 2.0 to mean values so they can be displayed on a radar chart with strictly positive values
-#                    values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+2.0)
-#                    values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median())
 #                    print('absolute values_list')
 #                    print(values_list)
                 values_array.append(values_list)
@@ -553,17 +520,14 @@ class PV(ttk.Frame):
         data = values_array
         print('data=')
         print(data)
-#        spoke_labels = ['rb', 'rf', 'lf', 'lb']
         spoke_labels = ['rb', 'rf', 'lf', 'lb']
         
     
         p = plt.figure(figsize=(6, 6))
         p.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
     
-#        colors = ['b', 'r', 'g', 'm', 'y']
         colors = ['blue', 'cyan', 'green', 'orange', 'magenta']
         
-#        self.ax = fig.add_subplot(111, projection='radar')
         self.ax = plt.subplot(111, projection='radar')
 
         # Adjust the height of the window so that title and legend are fully visible        
@@ -571,9 +535,6 @@ class PV(ttk.Frame):
         self.ax.set_position([box.x0, box.y0, box.width*0.95, box.height*0.95])
 
         if self.absolute_check_value.get(): # Absolute values
-#            plt.rgrids([-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5])
-#            plt.rgrids([1.0, 2.0, 3.0, 4.0])
-#            plt.ylim(0, 4.0)
             plt.rgrids([20, 40, 60, 80])
             plt.ylim(0, 100)
         else: # Relative values
@@ -670,8 +631,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
                         values_list.append(np.power(10,self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()))
-                        # Add 2.0 to mean values so that table values match radar chart values
-                        # values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+2.0)
                         values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std())
     #                print('values_list')
     #                print(values_list)
@@ -776,8 +735,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     for x in values_array[i]:
                         values = values + str('%.3f' % x) + ' '
                     values = values + '\n'
-#        popup = tk.Tk()
-#        popup.wm_title("Average EEG values")
         txt1 = Text(popup, width=70, height=9, wrap=tk.WORD)
         txt1.insert(END, dataline+header+values)
         txt1.grid(row=1, column=1, sticky=W)
@@ -817,8 +774,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
     
         popup = tk.Tk()
         popup.wm_title("Physiology graph")
-#        label = ttk.Label(popup, text='Plotting '+grph, font=NORM_FONT)
-#        label.pack(side="top", fill="x", pady=10)
         p = plt.figure()
         self.ax = plt.subplot(111)
         # In preparation for plotting, get the current radiobutton selection and the 
@@ -850,15 +805,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         plt.xlabel('time (s)')
                         plt.ylabel('absolute power')
                         plt.ylim(0,100)
-#                        self.ax.plot(self.absolute_df[band].index[t_range], self.absolute_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
-#                        self.ax.plot(self.absolute_df[band].index[t_range], np.power(10,self.absolute_df[band][t_range][d]), color=plotcolor[d], label=plotlabel[d])
                         self.ax.plot(self.absolute_df[band].index[t_range], 50*(self.absolute_df[band][t_range][d]+1), color=plotcolor[d], label=plotlabel[d])
-                        # plt.hold(True)
-#                        mean_val = self.absolute_df[band][t_range][d].mean()
-#                        std_val = self.absolute_df[band][t_range][d].std()
-#                        mean_val = np.power(10,self.absolute_df[band][t_range][d]).median()
-#                        mean_val = np.power(10,self.absolute_df[band][t_range][d]).mean()
-#                        std_val = np.power(10,self.absolute_df[band][t_range][d]).std()
                         mean_val = 50*(self.absolute_df[band][t_range][d]+1).mean()
                         std_val = 50*(self.absolute_df[band][t_range][d]+1).std()
                         plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
@@ -942,12 +889,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         # Adjust the height of the window so that legend is visible        
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.75, box.height*0.9])
-#        ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
         self.ax.legend(loc='upper left', bbox_to_anchor=(1,0.25)) # Place to the right of the graph, near bottom
-#        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fancybox=True, shadow=True, ncol=5)
-#        ax.set_position([box.x0, box.y0+box.height*0.1, box.width, box.height*0.9])
-#        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fancybox=True, shadow=True, ncol=5)
-#        plt.ylim(0,0.8)
         # Get strings from the sessions_df dataframe to use in the graph title        
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
@@ -955,15 +897,11 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         duration = self.sessions_df.ix[current_index]['duration']
         date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
-            #interval_string = self.sessions_df.ix[current_index]['interval'+str(int_value)]
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
         else:
             interval_string = 'full session'
 
-#        plt.title('EEG band power\n'\
-#            +title+'\n'\
-#            +interval_string, fontsize = 'medium')
         plt.title(graph_title+'\n'\
             +recording+' ('+subject+') '+title+'\n'\
             +interval_string, fontsize = 'large')
@@ -972,8 +910,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
         lbl0.pack(side=tk.BOTTOM, fill=X)
-#        lbl0.pack(fill=X)
-#        lbl0.pack()
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -983,9 +919,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         
         toolbar = NavigationToolbar2TkAgg(canvas, popup)
         toolbar.update()
-#        canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         canvas._tkcanvas.pack(side=tk.TOP, expand=1)
-#        canvas._tkcanvas.pack(side=tk.BOTTOM, expand=1)
         
         popup.mainloop()
         return None
@@ -997,8 +931,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         
         Presently, CANNOT UPDATE description text on Session tab.
         """
-#        self.path = 'C:/MedRec/'
-#        self.sessions_file = 'EEG_CardioRespSessions_NEW.xls'
         self.sessions_df.to_excel(self.path+self.sessions_file, \
         sheet_name='Sheet1', engine='xlsxwriter', merge_cells=False)
             
@@ -1009,12 +941,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         values of i from 1 - 4 correspond to user-defined rows interval1, ti1, tf1, etc.
         Values of j range from 0 - 2, where j=0 ~ interval, j=1 ~ ti, j=2 ~ tf
         """
-        #print(str(i))
-        #print(sv, i, j, sv.get())
-        #print('in update_value, before setting; interval.get() = '+str(self.interval.get()))
-        #self.interval.set(i) # Set radiobutton selected to match text input line
-        #print('in update_value, after setting; interval.get() = '+str(self.interval.get()))
-        
         if j==0:
             self.sessions_df.set_value(current_index, 'interval'+str(i), self.sva[i][0].get())
             #print('new name = '+str(self.sessions_df.get_value(current_index, 'interval'+str(i))))
@@ -1031,8 +957,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         """
         Creates the Graphs Request tab in the Physiology Viewer.
         """
-#        interval = StringVar()
-        # frame to hold contentx
         self.frame = ttk.Frame(nb, name='request')
          
         # widgets to be displayed on 'Request' tab
@@ -1073,18 +997,13 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         
         #print('button selected = '+str(self.interval.get()))
         
-#        lbl3 = ttk.Label(self.frame, width=6, textvariable=self.interval1_var)
-        
         for i in range(9):
-            #print('i='+str(i))
-#            self.sva[i][j].set(self.init_str[i][j])
             self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
                               self.update_value(var, i, 0))
             self.sva[i][1].trace("w", lambda name, index, mode, var=self.sva[i][1], i=i:
                               self.update_value(var, i, 1))
             self.sva[i][2].trace("w", lambda name, index, mode, var=self.sva[i][2], i=i:
                               self.update_value(var, i, 2))
-            #self.RadioObject[i] = ttk.Radiobutton(self.frame, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+3, column=0, sticky=W)     # radiobutton
             self.RadioObject.append(ttk.Radiobutton(self.frame, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+2, column=0, sticky=W))     # radiobutton
             self.interval.set(0)
             self.EntryObject.append(ttk.Entry(self.frame, width=20, textvariable=self.sva[i][0]).grid(row=i+2, column=1, sticky=W)) # interval entry
@@ -1093,8 +1012,6 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
 
         btn2 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
         btn2.grid(row=11, column=2, columnspan=2)
-        #self.RadioObject[0].state['selected']
-        #self.RadioObject[0].state['selected']
         self.interval.set(0)
         #print('in _create_request_tab; interval.get() = '+str(self.interval.get()))
         self.int_value = 0
@@ -1192,7 +1109,6 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
     
     def get_graphs(self, command):
         graph_list = []
-#        command = clean_command(command)
 #        print('command:'+str(command))
         #print('type(command) = '+str(type(command)))
         graph_tokens = command.split(sep=',')
