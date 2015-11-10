@@ -80,12 +80,13 @@ set4 = {'dlb', 'dlf','drf','drb',
         'blb', 'blf','brf','brb',
         'glb', 'glf','grf','grb'}
 set5 = {'v','p'}
-set6 = {'lb', 'lf', 'rf', 'rb'}
+set6 = {'lb', 'lf', 'rf', 'rb'} # commands for raw eeg (time domain)
 set7 = {'mean', 'median', 'std', 'meanstd'}
-set8 = {'c', 'm'}
+set8 = {'c', 'm'} # commands for concentration and mellow
 set9 = {'radar'}
+set10 = {'lbt', 'lft', 'rft', 'rbt'} # commands for transformed signal (frequency domain)
 
-spect = {'s1':'lb', 's2':'lf', 's3':'rf', 's4':'rb'}
+spect = {'s1':'lb', 's2':'lf', 's3':'rf', 's4':'rb'} # spectrograms
 cardioresp = {'v':'mv', 'p':'kPa'}
 
 """
@@ -118,6 +119,11 @@ cardioresp = {'v':'mv', 'p':'kPa'}
     lf ~ raw EEG for left front sensor
     rf ~ raw EEG for right front sensor
     rb ~ raw EEG for right back sensor
+    
+    lbt ~ Fourier transformed lb signal
+    lft ~ Fourier transformed lf signal
+    rft ~ Fourier transformed rf signal
+    rbt ~ Fourier transformed rb signal
     
     means ~ numerical mean values and standard deviations for each of four sensors
     medians ~ numerical median values and standard deviations for each of four sensors
@@ -329,7 +335,7 @@ class PV(ttk.Frame):
         self.sva[0][1].set('0')
         duration = self.duration_var.get()
         self.sva[0][2].set(duration)
-        for i in range(1,9): # fill in user-defined intervals in rows 1-4
+        for i in range(1,9): # fill in user-defined intervals in rows 1-8
             #print('i = '+str(i))
             #print('current_index = '+str(current_index))
             self.sva[i][0].set(self.sessions_df.ix[current_index]['interval'+str(i)])
@@ -497,7 +503,8 @@ class PV(ttk.Frame):
             values_array = []
             for i in range(len(freqbands)):
                 for j in range(len(locations[i])-1, 0, -1): # omit average value; step down for proper radar display
-                    values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]]+1).mean())
+                    values_list.append(30*(self.absolute_df[freqbands[i]][t_range][locations[i][j]]+1.667).mean())
+#                    values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]]+1).mean())
 #                    print('absolute values_list')
 #                    print(values_list)
                 values_array.append(values_list)
@@ -653,21 +660,23 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                    # rows are lb, lf, rf, rb
                     for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                         for i in range(len(freqbands)):
-                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+1))
+                            values_list.append(30*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+1.667))
+#                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+1))
                         values_array.append(values_list)
                         values_list = []
                 elif grph == 'median': # columns are delta, theta, alpha, beta, gamma
                                    # rows are lb, lf, rf, rb
                     for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                         for i in range(len(freqbands)):
-                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median()+1))
+                            values_list.append(30*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median()+1.667))
+#                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median()+1))
                         values_array.append(values_list)
                         values_list = []
                 elif grph == 'std': # columns are delta, theta, alpha, beta, gamma
                                    # rows are lb, lf, rf, rb
                     for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                         for i in range(len(freqbands)):
-                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std()+1)
+                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std()+1) # CORRECT THIS!
                         values_array.append(values_list)
                         values_list = []
                 dataline = recording+' '+grph + ' normalized absolute values for ' +subject+' | '+ title + ' | ' + interval_string + ' | ' + '\n'
@@ -765,6 +774,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         
         Raw EEG signal for four sensors are plotted using lb, lf, rf, rb.
         
+        Fourier transfomations of raw EEG signals are displayed in magnitude vs.
+        frequency plots.
+        
         Spectrograms for sensors lb, lf, rf, rb are plotted using commands
         s1, s2, s3, s4 respectively.
         
@@ -805,9 +817,13 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         plt.xlabel('time (s)')
                         plt.ylabel('absolute power')
                         plt.ylim(0,100)
-                        self.ax.plot(self.absolute_df[band].index[t_range], 50*(self.absolute_df[band][t_range][d]+1), color=plotcolor[d], label=plotlabel[d])
-                        mean_val = 50*(self.absolute_df[band][t_range][d]+1).mean()
-                        std_val = 50*(self.absolute_df[band][t_range][d]+1).std()
+                        # The factor 30 and shift 1.667 are chosen empirically so that range of absolute power values are withing range 0 - 100
+                        self.ax.plot(self.absolute_df[band].index[t_range], 30*(self.absolute_df[band][t_range][d]+1.667), color=plotcolor[d], label=plotlabel[d])
+                        mean_val = 30*(self.absolute_df[band][t_range][d]+1.667).mean()
+                        std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std() # CHECK THIS!
+#                        self.ax.plot(self.absolute_df[band].index[t_range], 50*(self.absolute_df[band][t_range][d]+1), color=plotcolor[d], label=plotlabel[d])
+#                        mean_val = 50*(self.absolute_df[band][t_range][d]+1).mean()
+#                        std_val = 50*(self.absolute_df[band][t_range][d]+1).std()
                         plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
                         the_mean = 'mean '+str('%.1f' % mean_val)+u"\u00B1"+str('%.1f' % std_val) # median with +/- symbol for standard deviation
                         #print(the_median)
@@ -869,6 +885,12 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                 color=plotcolor[d], backgroundcolor='white',
                                 horizontalalignment='left', verticalalignment='top')
                     i+=1
+                elif d in set10: # raw EEG for lb, lf, rf, rb
+                    graph_title = 'Fourier transform of EEG Signal'
+                    plt.xlabel('frequency (Hz)')
+                    plt.ylabel('power')
+                    t_range = np.logical_and(ti < self.raw_df.index, self.raw_df.index < tf) 
+#                    self.ax.plot(self.raw_df[d].index, self.raw_df[d], color=plotcolor[d], label=plotlabel[d])
             if self.heart_check_value.get() > 0: # If data exists for heart
                 if d == 'v':
                     t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 

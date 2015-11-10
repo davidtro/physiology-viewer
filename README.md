@@ -26,4 +26,12 @@ rec33_eeg.rel.h5  time series of EEG relative power values from the Muse Headban
 
 rec33_eeg.user.h5 time series of EEG user data (jaw clench, blink, concentration, mellow) from the Muse Headband
 
+musedata_daydreaming.csv   (140s recording of raw eeg during daydreaming)
+musedata_meditation.csv    (214s recording of raw eeg during  zazen meditation) 
+These files were recorded using the Muse headband and the Android app Muse Monitor by James Clutterbuck. 
+
+In both recordings, eyes were open. During daydreaming, eyes moved about a little; during meditation gaze remained fixed on a point in front of the subject. Jaw clench was used within the first 5 seconds of the start of the recording and 5s before the end for reference. Also, sequence of three eye-blinks were recorded 15 seconds after start and 15s before end of recording. Artifacts for jaw clench and eye blinks can be removed by truncating 20 seconds from the beginning and 20s from the end of the recordings.
+ 
+First column is timestamp; columns 2-5 are Raw EEG values in microvolts, with a range [0:~1682]. Sensors are TP9 - Left ear, FP1-Left forehead, FP2-Right forehead, TP10-Right ear.
+
 README.md   This file.
