@@ -69,6 +69,14 @@ for i in range(len(lines)):
 timezero = float(line_strings[0][0])
 
 duration = float(line_strings[len(lines)-1][0]) - timezero
+"""
+try:
+    duration = float(line_strings[len(lines)-1][0]) - timezero
+except:
+    print('timezero='+str(timezero))
+    print('len(lines)='+str(len(lines)))
+    print('line_strings='+line_strings[len(lines)-1][0])
+"""
 
 recordingtime = datetime.datetime.fromtimestamp(int(timezero)
     ).strftime('%Y-%m-%d %H:%M:%S')
@@ -132,7 +140,11 @@ for i in range(len(line_strings)):
     elif 'mellow' in line_strings[i][1]:
         mv.append([ms/1000.0, (float(line_strings[i][2]))*0.6]) # Max value of mellow will be displayed in graph as 0.75
     elif ('eeg' in line_strings[i][1]) and not ('quantization' in line_strings[i][1]):
-        eeg.append([float(line_strings[i][2]), float(line_strings[i][3]), float(line_strings[i][4]), float(line_strings[i][5])])
+        try:
+            eeg.append([float(line_strings[i][2]), float(line_strings[i][3]), float(line_strings[i][4]), float(line_strings[i][5])])
+        except IndexError:
+            print('index error with i='+str(i))
+            eeg.append([850., 850., 850., 850.]) # 850 is a reasonable substitute for a missing raw EEG value
 
 print('len(du) = '+str(len(du)))
 print('len(tu) = '+str(len(tu)))
@@ -293,6 +305,7 @@ mellow_df = DataFrame({
 index=vt, columns=['m'])
 
 r_eeg = np.arange(len(eeg))
+print('r_eeg.shape='+str(r_eeg.shape))
 eeg_df = DataFrame({
 'lb': [eeg[i][0] for i in r_eeg],
 'lf': [eeg[i][1] for i in r_eeg],

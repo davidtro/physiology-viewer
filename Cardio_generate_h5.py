@@ -98,7 +98,7 @@ def save_data(cr_data):
     p_df.columns.name = 'p'
     """
     global session
-    session = session[3:5] # Retain only the digits after 'lab' in 'lab##'
+    session = session[3:6] # Retain only the digits after 'lab' in 'lab##'
     session = 'rec' + session # New string is 'rec##'
     print(session)
     global v_store, p_store

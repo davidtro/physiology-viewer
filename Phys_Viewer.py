@@ -84,9 +84,10 @@ set6 = {'lb', 'lf', 'rf', 'rb'} # commands for raw eeg (time domain)
 set7 = {'mean', 'median', 'std', 'meanstd'}
 set8 = {'c', 'm'} # commands for concentration and mellow
 set9 = {'radar'}
-set10 = {'lbt', 'lft', 'rft', 'rbt'} # commands for transformed signal (frequency domain)
+set10 = {'psd1', 'psd2', 'psd3', 'psd4'} # commands for power spectral density (frequency domain)
 
 spect = {'s1':'lb', 's2':'lf', 's3':'rf', 's4':'rb'} # spectrograms
+psd = {'psd1':'lb', 'psd2':'lf', 'psd3':'rf', 'psd4':'rb'} # power spectral density graphs
 cardioresp = {'v':'mv', 'p':'kPa'}
 
 """
@@ -255,7 +256,7 @@ class PV(ttk.Frame):
         self.interval = IntVar() # integer variable for keeping track 
         # of radiobutton selected
 
-        # Five rows of StringVar for each selectable radiobutton
+        # Nine rows of StringVar for each selectable radiobutton
         # Row zero is the default interval for the entire session
         # Rows 1-8 are for user-defined intervals
         # Columns are for interval name, initial time and final time        
@@ -444,6 +445,10 @@ class PV(ttk.Frame):
             self.relative_df = pd.read_hdf(self.path+recording+'_eeg_rel.h5', 'rel_data')
             self.user_df = pd.read_hdf(self.path+recording+'_eeg_user.h5', 'user_data')
             self.raw_df = pd.read_hdf(self.path+recording+'_eeg_raw.h5', 'raw_data')
+            nsamples = len(self.raw_df)
+            self.fs = 220.0
+            timeseries = np.arange(nsamples)/self.fs
+            self.raw_df.insert(0, 't', pd.Series(timeseries, index=self.raw_df.index))
         if str(self.sessions_df['hrt'][index]) == '1':
             #print('reading cardio data')
             # Try to normalize heart values to minimize overlap with breath and eeg
@@ -452,7 +457,7 @@ class PV(ttk.Frame):
             #print('reading respiration data')
             # Try to normalize breath values to minimize overlap with heart and eeg
             self.resp_df = (pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)
-            
+
     def band(self, key):
         if key in d_bands:
             return 'delta'
@@ -840,6 +845,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         plt.xlabel('time (s)')
                         plt.ylabel('relative power')
                         plt.ylim(0,1.0) # relative power in any one band never seems to exceed 80%
+                        print('d='+str(d))
                         self.ax.plot(self.relative_df[band].index[t_range], self.relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
                         # plt.hold(True)
                         median_val = self.relative_df[band][t_range][d].median()
@@ -855,10 +861,17 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                     horizontalalignment='left', verticalalignment='top')
                         i+=1
                 elif d in set2: # spectrogram plots of frequency vs. time
-                    graph_title = 'Spectrogram of Frequency vs. Time'
+                    graph_title = 'Spectrogram of Frequency vs. Time for '+str(spect[d])
                     plt.xlabel('time (s)')
                     plt.ylabel('frequency (Hz)')
-                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=512,Fs=220) # E.g., request 's1' --> key 'lb'
+#                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
+                    i = int(ti*self.fs)
+                    f = int(tf*self.fs)
+                    i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
+                    signal = self.raw_df[spect[d]][i_range]
+                    Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=256,Fs=220, xextent=(ti,tf))
+                    plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
+                    plt.xlim(ti, tf)
                 elif d in set3: # x ~ sway; k ~ blink; j ~ jaw clench
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
                     self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
@@ -885,12 +898,18 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                 color=plotcolor[d], backgroundcolor='white',
                                 horizontalalignment='left', verticalalignment='top')
                     i+=1
-                elif d in set10: # raw EEG for lb, lf, rf, rb
-                    graph_title = 'Fourier transform of EEG Signal'
+                elif d in set10: # power spectral density for lb, lf, rf, rb
+                    graph_title = 'Power Spectral Density at '+str(psd[d])
                     plt.xlabel('frequency (Hz)')
-                    plt.ylabel('power')
-                    t_range = np.logical_and(ti < self.raw_df.index, self.raw_df.index < tf) 
-#                    self.ax.plot(self.raw_df[d].index, self.raw_df[d], color=plotcolor[d], label=plotlabel[d])
+                    i = int(ti*self.fs)
+                    f = int(tf*self.fs)
+                    i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
+                    signal = self.raw_df[psd[d]][i_range]
+                    Pxx, freqs = plt.psd(signal, NFFT=2048, noverlap=1024, Fs=220)
+                    self.ax.set_yscale('log')
+                    self.ax.set_xscale('linear')
+                    plt.xlim(1,25)
+                    plt.ylim(1,60)
             if self.heart_check_value.get() > 0: # If data exists for heart
                 if d == 'v':
                     t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 
@@ -1086,15 +1105,15 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         elif tok in set2:
             data_items.append(tok) 
             #print(tok+': spectrogram')            
-        elif tok in set5:
-            data_items.append(tok) 
-            #print(tok+': cardioresp')            
         elif tok in set3:
             data_items.append(tok)
             #print(tok+": found in set3 {'k', 'j', 'c', 'm'}")
         elif tok in set4:
             data_items.append(tok)
             #print(tok+' found in set4')
+        elif tok in set5:
+            data_items.append(tok) 
+            #print(tok+': cardioresp')            
         elif tok in set6:
             data_items.append(tok)
             #print(tok+' found in set6')
@@ -1106,7 +1125,10 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
             #print(tok+' found in set8')
         elif tok in set9:
             data_items.append(tok)
-            #print(tok+' found in set8')
+            #print(tok+' found in set9')
+        elif tok in set10:
+            data_items.append(tok)
+            #print(tok+' found in set10')
         else:
             print('unknown token')
         #print('data_items: '+str(data_items))
