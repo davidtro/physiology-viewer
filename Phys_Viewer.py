@@ -13,7 +13,7 @@ http://still-breathing.net/software/
 """
 
 import tkinter as tk
-from tkinter import BOTH, TOP, X, Y, N, W, LEFT, END
+from tkinter import BOTH, TOP, X, Y, N, E, W, LEFT, END
 from tkinter import ttk, Frame, Text, IntVar, StringVar
 import numpy as np
 import pandas as pd
@@ -261,6 +261,8 @@ class PV(ttk.Frame):
         self.person_var = StringVar()
         self.subject_var = StringVar()
         self.date_time_var = StringVar()
+        self.graph_type = StringVar() # used by redio buttons for Time series, Radar, Table, etc.
+        self.data_source = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
         self.duration_var = StringVar()
         self.notes_var = StringVar()
         self.eeg_check_value = IntVar()
@@ -268,6 +270,7 @@ class PV(ttk.Frame):
         self.breath_check_value = IntVar()
         self.sample_rate_var = IntVar()
         self.absolute_check_value = IntVar()
+        self.tv = StringVar()  # Value of text entry box for graph commands
     
         self.interval = IntVar() # integer variable for keeping track 
         # of radiobutton selected
@@ -289,6 +292,8 @@ class PV(ttk.Frame):
 #        self.interval_int = IntVar()
 #        self.interval_int.set(0)
         self.int_value = self.interval.set(0)
+        self.graph_type.set('timeseries') # initialize graph_type radio button
+        self.tv.set('a&b')
         self.absolute_check_value.set(0)
         self.pack(expand=Y, fill=BOTH)
         self.master.title('Physiology Viewer')
@@ -454,13 +459,6 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         lbl11.grid(row=1, column=2, sticky='SW')
         lbl12.grid(row=1, column=3, sticky='SW')
 
-        self.tv = StringVar()  # Should this be self.tv = StringVar() ?
-#        self.tv.set('median')  
-#        self.tv.set('radar')  
-        self.tv.set('a&b')  
-#        self.tv.set('alb&brf')  
-#        self.tv.set('meanstd')  
-#        interval = IntVar()
         self.interval.set(0)
         self.int_value = 0
 
@@ -519,16 +517,47 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         self.txt1.insert(END, notes)
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
+        lbl1 = ttk.Label(self.frame, text='EEG (220 Hz)', width=15)
+        lbl2 = ttk.Label(self.frame, text='Heart (220 Hz)', width=15)
+        lbl3 = ttk.Label(self.frame, text='Breath (22 Hz)', width=15)
+        
+        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type, value='timeseries')
+        rdo2 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type, value='radar')
+        rdo3 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type, value='table')
+        rdo4 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type, value='spectrogram')
+        rdo5 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type, value='psd')
+        rdo6 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type, value='raweeg')
+
+        # Text entry box for time series graph commands        
+        etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
+        etr.grid(row=5, column=1, sticky=W)
+        etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+
+        lbl4 = ttk.Label(self.frame, text='Intervals', width=12)
+        lbl5 = ttk.Label(self.frame, text='t_initial', width=10)
+        lbl6 = ttk.Label(self.frame, text='t_final', width=10)
+        lbl8 = ttk.Label(self.frame, text='Press <Enter> to plot.', width=30)
+
         btn1 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
         
         lbl0.grid(row=0, column=0, rowspan=3, sticky=N)
         self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
         self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
+        lbl1.grid(row=2, column=4, sticky=E)
+        lbl2.grid(row=3, column=4, sticky=E)
+        lbl3.grid(row=4, column=4, sticky=E)
+        lbl4.grid(row=14, column=1, sticky=E)
+        lbl5.grid(row=14, column=2, sticky=E)
+        lbl6.grid(row=14, column=3, sticky=E)
+        lbl8.grid(row=13, column=0, sticky=E)
         btn1.grid(row=24, column=4, sticky=W)
+        rdo1.grid(row=5, column=0, sticky=W)
+        rdo2.grid(row=7, column=0, sticky=W)
+        rdo3.grid(row=8, column=0, sticky=W)
+        rdo4.grid(row=9, column=0, sticky=W)
+        rdo5.grid(row=10, column=0, sticky=W)
+        rdo6.grid(row=11, column=0, sticky=W)
         """
-#_______________________________________
-        lbl11 = ttk.Label(self.frame, text='t_initial', width=10)
-        lbl12 = ttk.Label(self.frame, text='t_final', width=10)
         # position and set resize behaviour
         lbl11.grid(row=1, column=2, sticky='SW')
         lbl12.grid(row=1, column=3, sticky='SW')
