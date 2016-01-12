@@ -504,9 +504,9 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         Creates the Main user interface (UI) tab in the Physiology Viewer.
         """
         # frame to hold contentx
-        self.frame = ttk.Frame(nb, name='main')
+        self.frame = ttk.Frame(nb, height='8i', width='8i', name='main')
         # widgets to be displayed on 'Session' tab
-            
+        lbl0 = ttk.Label(self.frame, text='Session title goes here', width=40)    
         self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
 #        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.person_title_var, state='readonly')
         sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
@@ -514,39 +514,65 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         self.cbx1.current(29) # Sets current value to first session involving brain waves
         self.cbx1.bind("<<ComboboxSelected>>", self.update_session_data)
         
-        lbl1 = ttk.Label(self.frame, width=6, textvariable=self.index_var)
-        lbl2 = ttk.Label(self.frame, width=6, textvariable=self.recording_var)
-        etr1 = ttk.Entry(self.frame, width=8, textvariable=self.subject_var)
-        etr2 = ttk.Entry(self.frame, width=24, textvariable=self.date_time_var)
-        etr3 = ttk.Entry(self.frame, width=8, textvariable=self.duration_var)
         self.txt1 = Text(self.frame, width=50, height=10, wrap=tk.WORD)
         notes = self.sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
-        chk1 = ttk.Checkbutton(self.frame, text='EEG', variable=self.eeg_check_value, command=lambda: self.update_check('eeg')) 
-        chk2 = ttk.Checkbutton(self.frame, text='Heart', variable=self.heart_check_value, command=lambda: self.update_check('heart')) 
-        chk3 = ttk.Checkbutton(self.frame, text='Breath', variable=self.breath_check_value, command=lambda: self.update_check('breath'))
-        lbl3 = ttk.Label(self.frame, width=6, textvariable=self.sample_rate_var)
         btn1 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
         
-        self.cbx1.grid(row=1, column=2, columnspan=3, sticky=W)
-#        etr1.grid(row=1, column=2, columnspan=2)
-        lbl1.grid(row=1, column=1, sticky=W)
-        lbl2.grid(row=2, column=1, sticky=W)
-        etr1.grid(row=2, column=2, sticky=W)
-        etr2.grid(row=2, column=3, sticky=W)
-        etr3.grid(row=2, column=4, sticky=W)
-        self.txt1.grid(row=3, column=1, rowspan=4, columnspan=4, sticky=W)
-        chk1.grid(row=3, column=5, sticky=W)
-        chk2.grid(row=4, column=5, sticky=W)
-        chk3.grid(row=5, column=5, sticky=W)
-        lbl3.grid(row=6, column=5, sticky=W)
-        btn1.grid(row=7, column=5, sticky=W)
-        
+        lbl0.grid(row=0, column=0, rowspan=3, sticky=N)
+        self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
+        self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
+        btn1.grid(row=24, column=4, sticky=W)
+        """
+#_______________________________________
+        lbl11 = ttk.Label(self.frame, text='t_initial', width=10)
+        lbl12 = ttk.Label(self.frame, text='t_final', width=10)
         # position and set resize behaviour
-#        lbl.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
-#        btn.grid(row=1, column=0, pady=(2,4))
+        lbl11.grid(row=1, column=2, sticky='SW')
+        lbl12.grid(row=1, column=3, sticky='SW')
+
+        self.tv = StringVar()  # Should this be self.tv = StringVar() ?
+#        self.tv.set('median')  
+#        self.tv.set('radar')  
+        self.tv.set('a&b')  
+#        self.tv.set('alb&brf')  
+#        self.tv.set('meanstd')  
+#        interval = IntVar()
+        self.interval.set(0)
+        self.int_value = 0
+
+        # Add radiobuttons for intervals and text entry boxes for initial and final times        
+        etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
+        etr.grid(row=1, column=0, columnspan=3, sticky=W)
+        etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+        
+        cbx = ttk.Checkbutton(self.frame, text="absolute", variable=self.absolute_check_value, \
+                            onvalue=1, offvalue=0)
+        cbx.grid(row=1, column=1, sticky=W)
+        
+        #print('button selected = '+str(self.interval.get()))
+        
+        for i in range(9):
+            self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
+                              self.update_value(var, i, 0))
+            self.sva[i][1].trace("w", lambda name, index, mode, var=self.sva[i][1], i=i:
+                              self.update_value(var, i, 1))
+            self.sva[i][2].trace("w", lambda name, index, mode, var=self.sva[i][2], i=i:
+                              self.update_value(var, i, 2))
+            self.RadioObject.append(ttk.Radiobutton(self.frame, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+2, column=0, sticky=W))     # radiobutton
+            self.interval.set(0)
+            self.EntryObject.append(ttk.Entry(self.frame, width=20, textvariable=self.sva[i][0]).grid(row=i+2, column=1, sticky=W)) # interval entry
+            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][1]).grid(row=i+2, column=2, sticky=W)) #ti entry
+            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][2]).grid(row=i+2, column=3, sticky=W)) # tf entry
+
+        btn2 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
+        btn2.grid(row=11, column=2, columnspan=2)
+        self.interval.set(0)
+        #print('in _create_request_tab; interval.get() = '+str(self.interval.get()))
+        self.int_value = 0
+        """
         self.frame.rowconfigure(1, weight=1)
         self.frame.columnconfigure((0,1), weight=1, uniform=1)
          
