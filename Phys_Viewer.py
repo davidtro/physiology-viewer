@@ -18,6 +18,7 @@ from tkinter import ttk, Frame, Text, IntVar, StringVar
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.path import Path
 from matplotlib.spines import Spine
@@ -89,6 +90,21 @@ set10 = {'psd1', 'psd2', 'psd3', 'psd4'} # commands for power spectral density (
 spect = {'s1':'lb', 's2':'lf', 's3':'rf', 's4':'rb'} # spectrograms
 psd = {'psd1':'lb', 'psd2':'lf', 'psd3':'rf', 'psd4':'rb'} # power spectral density graphs
 cardioresp = {'v':'mv', 'p':'kPa'}
+
+# The following is used for psd semi-log graphs only
+XMIN = 0 # minimum frequency
+XMAX = 55 # maximum frequency
+YMIN = 0.1 # minimum PSD value
+YMAX = 100 # maximum PSD value
+lblY = YMAX - 30
+
+band_patches = [
+    patches.Rectangle((XMIN, YMIN), 4, YMAX, facecolor="blue", alpha=0.2),
+    patches.Rectangle((4, YMIN), 4, YMAX, facecolor="cyan", alpha=0.2),
+    patches.Rectangle((8, YMIN), 4, YMAX, facecolor="green", alpha=0.2),
+    patches.Rectangle((12, YMIN), 18, YMAX, facecolor="orange", alpha=0.2),
+    patches.Rectangle((30, YMIN), XMAX-30, YMAX, facecolor="magenta", alpha=0.2),
+]
 
 """
     d~delta, t~theta, a~alpha, b~beta, g~gamma
@@ -861,7 +877,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                     horizontalalignment='left', verticalalignment='top')
                         i+=1
                 elif d in set2: # spectrogram plots of frequency vs. time
-                    graph_title = 'Spectrogram of Frequency vs. Time for '+str(spect[d])
+                    graph_title = 'Spectrogram for '+str(spect[d])
                     plt.xlabel('time (s)')
                     plt.ylabel('frequency (Hz)')
 #                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
@@ -869,7 +885,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     f = int(tf*self.fs)
                     i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
                     signal = self.raw_df[spect[d]][i_range]
-                    Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=256,Fs=220, xextent=(ti,tf))
+                    Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
                     plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
                     plt.xlim(ti, tf)
                 elif d in set3: # x ~ sway; k ~ blink; j ~ jaw clench
@@ -900,16 +916,23 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     i+=1
                 elif d in set10: # power spectral density for lb, lf, rf, rb
                     graph_title = 'Power Spectral Density at '+str(psd[d])
-                    plt.xlabel('frequency (Hz)')
                     i = int(ti*self.fs)
                     f = int(tf*self.fs)
                     i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
                     signal = self.raw_df[psd[d]][i_range]
-                    Pxx, freqs = plt.psd(signal, NFFT=2048, noverlap=1024, Fs=220)
+                    Pxx, freqs = plt.psd(signal, NFFT=1024, noverlap=512, Fs=220)
                     self.ax.set_yscale('log')
                     self.ax.set_xscale('linear')
-                    plt.xlim(1,25)
-                    plt.ylim(1,60)
+                    plt.xlabel('Frequency (Hz)')
+                    plt.xlim(XMIN, XMAX)
+                    plt.ylim(YMIN, YMAX)
+                    for ptch in band_patches:
+                        self.ax.add_patch(ptch)
+                    self.ax.annotate('delta', xy=(2,lblY), fontsize=10, color=None, horizontalalignment='center')
+                    self.ax.annotate('theta', xy=(6,lblY), fontsize=10, color=None, horizontalalignment='center')
+                    self.ax.annotate('alpha', xy=(10,lblY), fontsize=10, color=None, horizontalalignment='center')
+                    self.ax.annotate('beta', xy=(21,lblY), fontsize=10, color=None, horizontalalignment='center')
+                    self.ax.annotate('gamma', xy=(42,lblY), fontsize=10, color=None, horizontalalignment='center')
             if self.heart_check_value.get() > 0: # If data exists for heart
                 if d == 'v':
                     t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 
@@ -927,7 +950,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             if not ((self.eeg_check_value.get() > 0) or (self.heart_check_value.get() > 0) or (self.breath_check_value.get() > 0)):
                 print('No data found for '+str(d))
 
-        # Adjust the height of the window so that legend is visible        
+        # Adjust the width of the window so that legend is visible        
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.75, box.height*0.9])
         self.ax.legend(loc='upper left', bbox_to_anchor=(1,0.25)) # Place to the right of the graph, near bottom
