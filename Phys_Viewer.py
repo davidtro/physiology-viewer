@@ -271,6 +271,7 @@ class PV(ttk.Frame):
         self.sample_rate_var = IntVar()
         self.absolute_check_value = IntVar()
         self.tv = StringVar()  # Value of text entry box for graph commands
+        self.type_average_var = StringVar() # type of average (mean, median, std, meanstd) in tables
     
         self.interval = IntVar() # integer variable for keeping track 
         # of radiobutton selected
@@ -294,6 +295,7 @@ class PV(ttk.Frame):
         self.int_value = self.interval.set(0)
         self.graph_type_var.set('timeseries') # initialize graph_type radio button
         self.data_source_var.set('lb') # initialize data_source as 'lb'
+        self.type_average_var.set('mean') # initialize for type of table
         self.tv.set('a&b')
         self.absolute_check_value.set(0)
         self.pack(expand=Y, fill=BOTH)
@@ -496,14 +498,17 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         self.frame.rowconfigure(1, weight=1)
         self.frame.columnconfigure((0,1), weight=1, uniform=1)
         nb.add(self.frame, text='Graphs Request', underline=0, padding=2)
-        #self.RadioObject[0].invoke()     
+        #self.RadioObject[0].invoke() 
+        
+    def set_table_type(self):
+        pass
          
     def _create_UI_tab(self, nb):
         """
         Creates the Main user interface (UI) tab in the Physiology Viewer.
         """
         # frame to hold contentx
-        self.frame = ttk.Frame(nb, height='8i', width='8i', name='main')
+        self.frame = ttk.Frame(nb, height='10i', width='8i', name='main')
         # widgets to be displayed on 'Session' tab
         lbl0 = ttk.Label(self.frame, text='Session title goes here', width=40)    
         self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
@@ -533,6 +538,11 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
         etr.grid(row=5, column=1, sticky=W)
         etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+
+        cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
+        cbx2.grid(row=8, column=1, sticky=W)
+        cbx2['values'] = ('mean', 'median', 'std', 'meanstd')
+        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
         rdo11 = ttk.Radiobutton(self.frame, text='lb', variable=self.data_source_var, value='lb')
         rdo12 = ttk.Radiobutton(self.frame, text='lf', variable=self.data_source_var, value='lf')
