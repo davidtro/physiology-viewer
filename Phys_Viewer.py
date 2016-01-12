@@ -261,8 +261,8 @@ class PV(ttk.Frame):
         self.person_var = StringVar()
         self.subject_var = StringVar()
         self.date_time_var = StringVar()
-        self.graph_type = StringVar() # used by redio buttons for Time series, Radar, Table, etc.
-        self.data_source = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
+        self.graph_type_var = StringVar() # used by redio buttons for Time series, Radar, Table, etc.
+        self.data_source_var = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
         self.duration_var = StringVar()
         self.notes_var = StringVar()
         self.eeg_check_value = IntVar()
@@ -292,7 +292,8 @@ class PV(ttk.Frame):
 #        self.interval_int = IntVar()
 #        self.interval_int.set(0)
         self.int_value = self.interval.set(0)
-        self.graph_type.set('timeseries') # initialize graph_type radio button
+        self.graph_type_var.set('timeseries') # initialize graph_type radio button
+        self.data_source_var.set('lb') # initialize data_source as 'lb'
         self.tv.set('a&b')
         self.absolute_check_value.set(0)
         self.pack(expand=Y, fill=BOTH)
@@ -521,17 +522,27 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         lbl2 = ttk.Label(self.frame, text='Heart (220 Hz)', width=15)
         lbl3 = ttk.Label(self.frame, text='Breath (22 Hz)', width=15)
         
-        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type, value='timeseries')
-        rdo2 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type, value='radar')
-        rdo3 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type, value='table')
-        rdo4 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type, value='spectrogram')
-        rdo5 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type, value='psd')
-        rdo6 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type, value='raweeg')
+        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries')
+        rdo2 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar')
+        rdo3 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table')
+        rdo4 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram')
+        rdo5 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd')
+        rdo6 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg')
 
         # Text entry box for time series graph commands        
         etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
         etr.grid(row=5, column=1, sticky=W)
         etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+
+        rdo11 = ttk.Radiobutton(self.frame, text='lb', variable=self.data_source_var, value='lb')
+        rdo12 = ttk.Radiobutton(self.frame, text='lf', variable=self.data_source_var, value='lf')
+        rdo13 = ttk.Radiobutton(self.frame, text='rf', variable=self.data_source_var, value='rf')
+        rdo14 = ttk.Radiobutton(self.frame, text='rb', variable=self.data_source_var, value='rb')
+        rdo15 = ttk.Radiobutton(self.frame, text='left', variable=self.data_source_var, value='left')
+        rdo16 = ttk.Radiobutton(self.frame, text='right', variable=self.data_source_var, value='right')
+        rdo17 = ttk.Radiobutton(self.frame, text='front', variable=self.data_source_var, value='front')
+        rdo18 = ttk.Radiobutton(self.frame, text='back', variable=self.data_source_var, value='back')
+        rdo19 = ttk.Radiobutton(self.frame, text='mean', variable=self.data_source_var, value='mean')
 
         lbl4 = ttk.Label(self.frame, text='Intervals', width=12)
         lbl5 = ttk.Label(self.frame, text='t_initial', width=10)
@@ -543,13 +554,15 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         lbl0.grid(row=0, column=0, rowspan=3, sticky=N)
         self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
         self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
-        lbl1.grid(row=2, column=4, sticky=E)
-        lbl2.grid(row=3, column=4, sticky=E)
-        lbl3.grid(row=4, column=4, sticky=E)
+        lbl1.grid(row=2, column=5, sticky=E)
+        lbl2.grid(row=3, column=5, sticky=E)
+        lbl3.grid(row=4, column=5, sticky=E)
         lbl4.grid(row=14, column=1, sticky=E)
         lbl5.grid(row=14, column=2, sticky=E)
         lbl6.grid(row=14, column=3, sticky=E)
         lbl8.grid(row=13, column=0, sticky=E)
+        
+        
         btn1.grid(row=24, column=4, sticky=W)
         rdo1.grid(row=5, column=0, sticky=W)
         rdo2.grid(row=7, column=0, sticky=W)
@@ -557,6 +570,16 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         rdo4.grid(row=9, column=0, sticky=W)
         rdo5.grid(row=10, column=0, sticky=W)
         rdo6.grid(row=11, column=0, sticky=W)
+        rdo11.grid(row=7, column=2, sticky=E)
+        rdo12.grid(row=5, column=2, sticky=E)
+        rdo13.grid(row=5, column=4, sticky=W)
+        rdo14.grid(row=7, column=4, sticky=W)
+        rdo15.grid(row=8, column=2, sticky=E)
+        rdo16.grid(row=8, column=4, sticky=W)
+        rdo17.grid(row=5, column=5, sticky=E)
+        rdo18.grid(row=7, column=5, sticky=E)
+        rdo19.grid(row=8, column=5, sticky=E)
+
         """
         # position and set resize behaviour
         lbl11.grid(row=1, column=2, sticky='SW')
