@@ -528,11 +528,11 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         lbl3 = ttk.Label(self.frame, text='Breath (22 Hz)', width=15)
         
         rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries')
-        rdo2 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar')
-        rdo3 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table')
-        rdo4 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram')
-        rdo5 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd')
-        rdo6 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg')
+        rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram')
+        rdo3 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd')
+        rdo4 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg')
+        rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar')
+        rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table')
 
         # Text entry box for time series graph commands        
         etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
@@ -540,7 +540,7 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
 
         cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
-        cbx2.grid(row=8, column=1, sticky=W)
+        cbx2.grid(row=11, column=1, sticky=W)
         cbx2['values'] = ('mean', 'median', 'std', 'meanstd')
         cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
@@ -561,19 +561,20 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
 
         btn1 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
         
-        lbl0.grid(row=0, column=0, rowspan=3, sticky=N)
+        lbl0.grid(row=0, column=0, columnspan=3, sticky=N)
         self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
         self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
+   
         lbl1.grid(row=2, column=5, sticky=E)
         lbl2.grid(row=3, column=5, sticky=E)
         lbl3.grid(row=4, column=5, sticky=E)
-        lbl4.grid(row=14, column=1, sticky=E)
-        lbl5.grid(row=14, column=2, sticky=E)
-        lbl6.grid(row=14, column=3, sticky=E)
+        lbl4.grid(row=14, column=1, sticky=W)
+        lbl5.grid(row=14, column=4, sticky=E)
+        lbl6.grid(row=14, column=5, sticky=E)
         lbl8.grid(row=13, column=0, sticky=E)
         
         
-        btn1.grid(row=24, column=4, sticky=W)
+        btn1.grid(row=24, column=4, columnspan=2)
         rdo1.grid(row=5, column=0, sticky=W)
         rdo2.grid(row=7, column=0, sticky=W)
         rdo3.grid(row=8, column=0, sticky=W)
@@ -590,6 +591,18 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         rdo18.grid(row=7, column=5, sticky=E)
         rdo19.grid(row=8, column=5, sticky=E)
 
+        for i in range(9):
+            self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
+                              self.update_value(var, i, 0))
+            self.sva[i][1].trace("w", lambda name, index, mode, var=self.sva[i][1], i=i:
+                              self.update_value(var, i, 1))
+            self.sva[i][2].trace("w", lambda name, index, mode, var=self.sva[i][2], i=i:
+                              self.update_value(var, i, 2))
+            self.RadioObject.append(ttk.Radiobutton(self.frame, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+15, column=0, sticky=W))     # radiobutton
+            self.interval.set(0)
+            self.EntryObject.append(ttk.Entry(self.frame, width=20, textvariable=self.sva[i][0]).grid(row=i+15, column=1,sticky=W)) # interval entry
+            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][1]).grid(row=i+15, column=4, columnspan=3, sticky=W)) #ti entry
+            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][2]).grid(row=i+15, column=5, sticky=W)) # tf entry
         """
         # position and set resize behaviour
         lbl11.grid(row=1, column=2, sticky='SW')
