@@ -401,12 +401,18 @@ class PV(ttk.Frame):
         def configure_widgets():
             disable_dict = {'timeseries': [cbx2],
                             'spectrogram': [check1, cbx2],
-                            'psd': [cbx2, check1],
-                            'raweeg': [cbx2, check1],
-                            'radar': [cbx2, check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
-                            'table': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19]}
-            enable_dict = {'timeseries': [check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
-                            'spectrogram': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
+                            'psd': [cbx2, check1, \
+                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
+                            'raweeg': [cbx2, check1, \
+                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
+                            'radar': [cbx2, check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
+                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
+                            'table': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
+                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11]}
+            enable_dict = {'timeseries': [check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
+                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
+                            'spectrogram': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
+                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
                             'psd': [],
                             'raweeg': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
                             'radar': [check1],
@@ -423,12 +429,15 @@ class PV(ttk.Frame):
         self.frame = ttk.Frame(nb, height='10i', width='8i', name='main')
         # widgets to be displayed on 'Session' tab
         lbl0 = ttk.Label(self.frame, text='Session title goes here', width=40)    
+        lbl0.grid(row=0, column=0, columnspan=3, sticky=N)
+
         self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
 #        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.person_title_var, state='readonly')
         sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
         self.cbx1['values'] = [row for row in sessions_list]
         self.cbx1.current(29) # Sets current value to first session involving brain waves
         self.cbx1.bind("<<ComboboxSelected>>", self.update_session_data)
+        self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
         
         check1 = ttk.Checkbutton(self.frame, text="absolute", width=20, variable=self.absolute_check_value, \
                             onvalue=1, offvalue=0)
@@ -437,12 +446,18 @@ class PV(ttk.Frame):
         self.txt1 = Text(self.frame, height=10, wrap=tk.WORD)
         notes = self.sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
+        self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
+
         lbl1 = ttk.Label(self.frame, text=' EEG (220 Hz)', width=15)
         lbl2 = ttk.Label(self.frame, text=' Heart (220 Hz)', width=15)
         lbl3 = ttk.Label(self.frame, text=' Breath (22 Hz)', width=15)
         
+        lbl1.grid(row=2, column=4, sticky=NW)
+        lbl2.grid(row=3, column=4, sticky=NW)
+        lbl3.grid(row=4, column=4, sticky=NW)
+
         rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: configure_widgets())
         rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: configure_widgets())
         rdo3 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd', command=lambda: configure_widgets())
@@ -450,11 +465,17 @@ class PV(ttk.Frame):
         rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: configure_widgets())
         rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: configure_widgets())
 
+        rdo1.grid(row=5, column=0, sticky=W)
+        rdo2.grid(row=7, column=0, sticky=W)
+        rdo3.grid(row=8, column=0, sticky=W)
+        rdo4.grid(row=9, column=0, sticky=W)
+        rdo5.grid(row=10, column=0, sticky=W)
+        rdo6.grid(row=11, column=0, sticky=W)
         # Text entry box for time series graph commands        
         #etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
         #etr.grid(row=5, column=1, sticky=W)
         #etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
-        frm1 = ttk.Frame(self.frame, borderwidth=2, width=20)
+        frm1 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for containing checkboxes d,t,a,b,g,...
         frm1.grid(row=5, column=1, sticky=W)
         chk1 = ttk.Checkbutton(frm1, text='d', variable=self.data_type_var['d'])
         chk2 = ttk.Checkbutton(frm1, text='t', variable=self.data_type_var['t'])
@@ -496,33 +517,6 @@ class PV(ttk.Frame):
         rdo18 = ttk.Radiobutton(self.frame, text='back', variable=self.data_source_var, value='back')
         rdo19 = ttk.Radiobutton(self.frame, text='mean', variable=self.data_source_var, value='mean')
 
-        lbl4 = ttk.Label(self.frame, text='Intervals', width=12)
-        lbl5 = ttk.Label(self.frame, text='t_initial', width=10)
-        lbl6 = ttk.Label(self.frame, text='t_final', width=10)
-        lbl8 = ttk.Label(self.frame, text='Press <Enter> to plot.', width=30)
-
-        btn1 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
-        
-        lbl0.grid(row=0, column=0, columnspan=3, sticky=N)
-        self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
-        self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
-   
-        lbl1.grid(row=2, column=4, sticky=NW)
-        lbl2.grid(row=3, column=4, sticky=NW)
-        lbl3.grid(row=4, column=4, sticky=NW)
-        lbl4.grid(row=14, column=1, sticky=W)
-        lbl5.grid(row=14, column=4, sticky=E)
-        lbl6.grid(row=14, column=5, sticky=E)
-        lbl8.grid(row=13, column=0, sticky=E)
-        
-        
-        btn1.grid(row=24, column=4, columnspan=2)
-        rdo1.grid(row=5, column=0, sticky=W)
-        rdo2.grid(row=7, column=0, sticky=W)
-        rdo3.grid(row=8, column=0, sticky=W)
-        rdo4.grid(row=9, column=0, sticky=W)
-        rdo5.grid(row=10, column=0, sticky=W)
-        rdo6.grid(row=11, column=0, sticky=W)
         rdo11.grid(row=7, column=2, sticky=E)
         rdo12.grid(row=5, column=2, sticky=E)
         rdo13.grid(row=5, column=4, sticky=W)
@@ -533,6 +527,20 @@ class PV(ttk.Frame):
         rdo18.grid(row=7, column=5, sticky=E)
         rdo19.grid(row=8, column=5, sticky=E)
 
+        frm2 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for Intervals, t_initial, t_final
+        frm2.grid(row=12, column=0, columnspan=3, sticky=W)
+
+        lbl4 = ttk.Label(frm2, text='Intervals', width=12)
+        lbl5 = ttk.Label(frm2, text='t_initial', width=10)
+        lbl6 = ttk.Label(frm2, text='t_final', width=10)
+
+        lbl4.grid(row=0, column=1, sticky=W)
+        lbl5.grid(row=0, column=2, sticky=E)
+        lbl6.grid(row=0, column=3, sticky=E)
+
+        btn0 = ttk.Button(self.frame, text='Plot', command=self.select_graph)
+        btn0.grid(row=11, column=3)
+
         for i in range(9):
             self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
                               self.update_value(var, i, 0))
@@ -540,14 +548,17 @@ class PV(ttk.Frame):
                               self.update_value(var, i, 1))
             self.sva[i][2].trace("w", lambda name, index, mode, var=self.sva[i][2], i=i:
                               self.update_value(var, i, 2))
-            self.RadioObject.append(ttk.Radiobutton(self.frame, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+15, column=0, sticky=W))     # radiobutton
+            self.RadioObject.append(ttk.Radiobutton(frm2, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+1, column=0, sticky=W))     # radiobutton
             self.interval.set(0)
-            self.EntryObject.append(ttk.Entry(self.frame, width=20, textvariable=self.sva[i][0]).grid(row=i+15, column=1,sticky=W)) # interval entry
-            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][1]).grid(row=i+15, column=4, columnspan=3, sticky=W)) #ti entry
-            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][2]).grid(row=i+15, column=5, sticky=W)) # tf entry
+            self.EntryObject.append(ttk.Entry(frm2, width=20, textvariable=self.sva[i][0]).grid(row=i+1, column=1,sticky=W)) # interval entry
+            self.EntryObject.append(ttk.Entry(frm2, width=8, textvariable=self.sva[i][1]).grid(row=i+1, column=2, sticky=W)) #ti entry
+            self.EntryObject.append(ttk.Entry(frm2, width=8, textvariable=self.sva[i][2]).grid(row=i+1, column=3, sticky=W)) # tf entry
 
-        self.frame.rowconfigure(1, weight=1)
-        self.frame.columnconfigure((0,1), weight=1, uniform=1)
+        btn1 = ttk.Button(frm2, text='Save', command=self.save_session_data)
+        btn1.grid(row=10, column=2, columnspan=2)
+        
+#        self.frame.rowconfigure(1, weight=1)
+#        self.frame.columnconfigure((0,1), weight=1, uniform=1)
          
         # add to notebook (underline = index for short-cut character)
         nb.add(self.frame, text='Main', underline=0, padding=2)
@@ -607,19 +618,129 @@ class PV(ttk.Frame):
             # Try to normalize breath values to minimize overlap with heart and eeg
             self.resp_df = (pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)
 
-    def band(self, key):
-        if key in d_bands:
-            return 'delta'
-        elif key in t_bands:
-            return 'theta'
-        elif key in a_bands:
-            return 'alpha'
-        elif key in b_bands:
-            return 'beta'
-        elif key in g_bands:
-            return 'gamma'
+    def draw_spectrogram(self):
+        pass
+    
+    def draw_psd(self):
+        popup = tk.Tk()
+        popup.wm_title("Power Spectral Density")
+        p = plt.figure()
+        self.ax = plt.subplot(111)
+        # In preparation for plotting, get the current radiobutton selection and the 
+        # corresponding initial and final times of the interval        
+        int_value = self.interval.get() # int_value represents the currently selected radiobutton
+        #print('int_value = '+str(int_value))
+        
+        ti = float(self.sva[int_value][1].get())
+        tf = float(self.sva[int_value][2].get())
+
+        recording = self.sessions_df.ix[current_index]['recording']
+        title = self.sessions_df.ix[current_index]['title']
+        subject = self.sessions_df.ix[current_index]['subject']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
+        if int_value > 0:
+            # Ensure that graph title includes interval name as entered
+            interval_string = self.sva[self.interval.get()][0].get()
         else:
-            return None
+            interval_string = 'full session'
+
+        d = self.data_source_var.get()
+        graph_title = 'Power Spectral Density at '+str(d)
+        i = int(ti*self.fs)
+        f = int(tf*self.fs)
+        i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
+        signal = self.raw_df[d][i_range]
+        Pxx, freqs = plt.psd(signal, NFFT=1024, noverlap=512, Fs=220)
+        self.ax.set_yscale('log')
+        self.ax.set_xscale('linear')
+        plt.xlabel('Frequency (Hz)')
+        plt.xlim(XMIN, XMAX)
+        plt.ylim(YMIN, YMAX)
+        for ptch in band_patches:
+            self.ax.add_patch(ptch)
+        self.ax.annotate('delta', xy=(2,lblY), fontsize=10, color=None, horizontalalignment='center')
+        self.ax.annotate('theta', xy=(6,lblY), fontsize=10, color=None, horizontalalignment='center')
+        self.ax.annotate('alpha', xy=(10,lblY), fontsize=10, color=None, horizontalalignment='center')
+        self.ax.annotate('beta', xy=(21,lblY), fontsize=10, color=None, horizontalalignment='center')
+        self.ax.annotate('gamma', xy=(42,lblY), fontsize=10, color=None, horizontalalignment='center')
+
+        plt.title(graph_title+'\n'\
+            +recording+' ('+subject+') '+title+'\n'\
+            +interval_string, fontsize = 'large')
+        plt.show()
+
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
+        
+        canvas = FigureCanvasTkAgg(p, master=popup)
+        canvas.show()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        btn = ttk.Button(popup, text="Close", command=popup.destroy)
+        btn.pack(side=tk.RIGHT)
+        
+        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+        toolbar.update()
+        canvas._tkcanvas.pack(side=tk.TOP, expand=1)
+        
+        popup.mainloop()
+        return None
+    
+    def draw_raw_eeg(self):
+        popup = tk.Tk()
+        popup.wm_title("Raw EEG")
+        p = plt.figure()
+        self.ax = plt.subplot(111)
+        # In preparation for plotting, get the current radiobutton selection and the 
+        # corresponding initial and final times of the interval        
+        int_value = self.interval.get() # int_value represents the currently selected radiobutton
+        #print('int_value = '+str(int_value))
+        
+        ti = float(self.sva[int_value][1].get())
+        tf = float(self.sva[int_value][2].get())
+
+        recording = self.sessions_df.ix[current_index]['recording']
+        title = self.sessions_df.ix[current_index]['title']
+        subject = self.sessions_df.ix[current_index]['subject']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
+        if int_value > 0:
+            # Ensure that graph title includes interval name as entered
+            interval_string = self.sva[self.interval.get()][0].get()
+        else:
+            interval_string = 'full session'
+
+        graph_title = 'Raw EEG Signal'
+        plt.xlabel('samples (220 per second)')
+        plt.ylabel('voltage (microvolts)')
+        d = self.data_source_var.get()
+        i = int(ti*self.fs)
+        f = int(tf*self.fs)
+        i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
+        self.ax.plot(self.raw_df[d][i_range].index, self.raw_df[d][i_range], color=plotcolor[d], label=plotlabel[d])
+
+        plt.title(graph_title+'\n'\
+            +recording+' ('+subject+') '+title+'\n'\
+            +interval_string, fontsize = 'large')
+        plt.show()
+
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
+        
+        canvas = FigureCanvasTkAgg(p, master=popup)
+        canvas.show()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        btn = ttk.Button(popup, text="Close", command=popup.destroy)
+        btn.pack(side=tk.RIGHT)
+        
+        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+        toolbar.update()
+        canvas._tkcanvas.pack(side=tk.TOP, expand=1)
+        
+        popup.mainloop()
+        return None
 
     def draw_radar_chart(self):
         """
@@ -749,7 +870,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         canvas._tkcanvas.pack(side=tk.TOP, expand=1)
         popup.mainloop()
             
-    def draw_table(self, grph):
+    def draw_table(self):
         """
         In a new pop-up window, draws a text box and fills it with lines of data
         corresponding to selected interval of a session. Options include mean,
@@ -784,6 +905,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         values_list = []
         values_array = []
         popup = tk.Tk()
+        grph = self.type_average_var.get()
         if self.absolute_check_value.get():  # Display absolute values normalized to range [0:100] in table
             popup.wm_title("Average Absolute EEG values")
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
@@ -1015,12 +1137,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                 elif d in set3: # x ~ sway; k ~ blink; j ~ jaw clench
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
                     self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
-                elif d in set6: # raw EEG for lb, lf, rf, rb
-                    graph_title = 'Raw EEG Signal'
-                    plt.xlabel('samples (220 per second)')
-                    plt.ylabel('voltage (microvolts)')
-                    t_range = np.logical_and(ti < self.raw_df.index, self.raw_df.index < tf) 
-                    self.ax.plot(self.raw_df[d].index, self.raw_df[d], color=plotcolor[d], label=plotlabel[d])
                 elif d in set8: # c ~ concentration; m~ mellow
                     graph_title = "Muse Values for 'concentration' and 'mellow'"
                     plt.xlabel('time (s)')
@@ -1038,25 +1154,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                 color=plotcolor[d], backgroundcolor='white',
                                 horizontalalignment='left', verticalalignment='top')
                     i+=1
-                elif d in set10: # power spectral density for lb, lf, rf, rb
-                    graph_title = 'Power Spectral Density at '+str(psd[d])
-                    i = int(ti*self.fs)
-                    f = int(tf*self.fs)
-                    i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
-                    signal = self.raw_df[psd[d]][i_range]
-                    Pxx, freqs = plt.psd(signal, NFFT=1024, noverlap=512, Fs=220)
-                    self.ax.set_yscale('log')
-                    self.ax.set_xscale('linear')
-                    plt.xlabel('Frequency (Hz)')
-                    plt.xlim(XMIN, XMAX)
-                    plt.ylim(YMIN, YMAX)
-                    for ptch in band_patches:
-                        self.ax.add_patch(ptch)
-                    self.ax.annotate('delta', xy=(2,lblY), fontsize=10, color=None, horizontalalignment='center')
-                    self.ax.annotate('theta', xy=(6,lblY), fontsize=10, color=None, horizontalalignment='center')
-                    self.ax.annotate('alpha', xy=(10,lblY), fontsize=10, color=None, horizontalalignment='center')
-                    self.ax.annotate('beta', xy=(21,lblY), fontsize=10, color=None, horizontalalignment='center')
-                    self.ax.annotate('gamma', xy=(42,lblY), fontsize=10, color=None, horizontalalignment='center')
             if self.heart_check_value.get() > 0: # If data exists for heart
                 if d == 'v':
                     t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 
@@ -1141,111 +1238,24 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         self.interval.set(0)
         
             
-    def remove_dups(self, alist):
-        aset = set(alist)
-        return list(aset)
-        
-    def clean_command(self, command):
-        # David, you really need to understand this
-        command = "".join(command.split()) # Remove all white space
-        return command  
-
-        
-    def parse(self, grph):
+    def select_graph(self):
         """
-        If grph contains '&' then prepare list of multi-data before
-        returning list of pairs [band, col];
-        otherwise simply return simple single-line data
+        Selects plotting routine based on graph type radiobutton selection
         """
-    #    print('In parse(grph) with grph= '+str(grph))
-        
-        data_list = []
-        if '&' in grph:
-            multi_data_list = []
-            tokens = grph.split('&')
-            #print('tokens='+str(tokens))
-            for tok in tokens:
-                #print('multi_data_list = '+str(multi_data_list))
-                new_item = self.prepare_data_items(tok)
-                #print('new_item = '+str(new_item))
-                assert len(new_item) == 1
-                multi_data_list.append(new_item[0]) # Assume len(new_item) == 1
-            #print('multi_data_list: ',str(multi_data_list))
-            return multi_data_list
-        else:
-            data_list = self.prepare_data_items(grph)
-            #print('data_list: '+str(data_list))
-            return data_list
-    
-    def prepare_data_items(self, tok):
-        data_items = []
-        if tok in set1:
-            data_items.append(tok) # Mean values are in column 5
-        elif tok in set2:
-            data_items.append(tok) 
-            #print(tok+': spectrogram')            
-        elif tok in set3:
-            data_items.append(tok)
-            #print(tok+": found in set3 {'k', 'j', 'c', 'm'}")
-        elif tok in set4:
-            data_items.append(tok)
-            #print(tok+' found in set4')
-        elif tok in set5:
-            data_items.append(tok) 
-            #print(tok+': cardioresp')            
-        elif tok in set6:
-            data_items.append(tok)
-            #print(tok+' found in set6')
-        elif tok in set7:
-            data_items.append(tok)
-            #print(tok+' found in set7')
-        elif tok in set8:
-            data_items.append(tok)
-            #print(tok+' found in set8')
-        elif tok in set9:
-            data_items.append(tok)
-            #print(tok+' found in set9')
-        elif tok in set10:
-            data_items.append(tok)
-            #print(tok+' found in set10')
-        else:
-            print('unknown token')
-        #print('data_items: '+str(data_items))
-        return data_items
-
-    def prepare_graphs(self, graph_list):
-        """
-        Examines items in graph_list:
-        Prepare list of data items to be plotted.
-        """
-        #print('graph_list: '+str(graph_list))
-        for grph in graph_list:
-            #print('grph='+grph)
-            data_list = self.parse(grph)
-            if grph in set7:
-                self.draw_table(grph)
-            elif grph in set9:
-                self.draw_radar_chart()
-            else:
-                self.draw_graph(grph, data_list)
-        return None
-    
-    def get_graphs(self, command):
-        graph_list = []
-#        print('command:'+str(command))
-        #print('type(command) = '+str(type(command)))
-        graph_tokens = command.split(sep=',')
-        while '' in graph_tokens:
-            graph_tokens.remove('')
-            #print('graph_tokens:'+str(graph_tokens))
-        for tok in graph_tokens:
-            #print(tok)
-            graph_list.append(tok)
-        graph_list = self.remove_dups(graph_list)
-        #print('graph_list: '+str(graph_list), flush=True)
-        self.prepare_graphs(graph_list)
-        return graph_list
-    
+        graph_type = self.graph_type_var.get()
+        if graph_type == 'timeseries':
+            self.draw_graph()
+        elif graph_type == 'spectrogram':
+            self.draw_spectrogram()
+        elif graph_type == 'psd':
+            self.draw_psd()
+        elif graph_type == 'raweeg':
+            self.draw_raw_eeg()
+        elif graph_type == 'radar':
+            self.draw_radar_chart()
+        elif graph_type == 'table':
+            self.draw_table()
+            
          
 if __name__ == '__main__':
     PV().mainloop()
