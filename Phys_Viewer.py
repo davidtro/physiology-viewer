@@ -30,16 +30,17 @@ LARGE_FONT = ("Verdana", 12)
 NORM_FONT =  ("Verdana", 10)
 SMALL_FONT = ("Verdana", 18)
 
-graphs = ['d_m', 'dlb', 'dlf', 'drf', 'drb',
-        't_m', 'tlb', 'tlf', 'trf', 'trb',
-        'a_m', 'alb', 'alf', 'arf', 'arb',
-        'b_m', 'blb', 'blf', 'brf', 'brb',
-        'g_m', 'glb', 'glf', 'grf', 'grb',
-        'x', 'k', 'j', 'c', 'm', 'v', 'p',
-        'lb', 'lf', 'rf', 'rb',
-        's1', 's2', 's3', 's4',
-        'mean', 'median', 'std', 'meanstd', 'radar'
-        ]
+graphs = {'d': 'delta', 
+          't': 'theta', 
+          'a': 'alpha', 
+          'b': 'beta', 
+          'g': 'gamma',
+          'k': 'blink', 
+          'j': 'jaw clench', 
+          'c': 'concentration', 
+          'm': 'mellow', 
+          'v': 'heart', 
+          'p': 'breath'}
         
 plotlabel = {'d_m':'delta', 'dlb':'delta lb', 'dlf':'delta lf', 'drf':'delta rf', 'drb':'delta rb',
         't_m':'theta', 'tlb':'theta lb', 'tlf':'theta lf', 'trf':'theta rf', 'trb':'theta rb',
@@ -66,20 +67,24 @@ locations = [['d_m', 'dlb', 'dlf','drf','drb'],
              ['b_m', 'blb', 'blf','brf','brb'],
              ['g_m', 'glb', 'glf','grf','grb']]
 
+"""
 d_bands = {'d_m', 'dlb', 'dlf','drf','drb'}
 t_bands = {'t_m', 'tlb', 'tlf','trf','trb'}
 a_bands = {'a_m', 'alb', 'alf','arf','arb'}
 b_bands = {'b_m', 'blb', 'blf','brf','brb'}
 g_bands = {'g_m', 'glb', 'glf','grf','grb'}
+"""
 
 set1 = {'d', 't', 'a', 'b', 'g'}
 set2 = {'s1', 's2', 's3', 's4'}
 set3 = {'x', 'k', 'j'}
+"""
 set4 = {'dlb', 'dlf','drf','drb',
         'tlb', 'tlf','trf','trb',
         'alb', 'alf','arf','arb',
         'blb', 'blf','brf','brb',
         'glb', 'glf','grf','grb'}
+        """
 set5 = {'v','p'}
 set6 = {'lb', 'lf', 'rf', 'rb'} # commands for raw eeg (time domain)
 set7 = {'mean', 'median', 'std', 'meanstd'}
@@ -263,6 +268,8 @@ class PV(ttk.Frame):
         self.date_time_var = StringVar()
         self.graph_type_var = StringVar() # used by redio buttons for Time series, Radar, Table, etc.
         self.data_source_var = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
+        self.data_type_var = {'d': IntVar(), 't': IntVar(), 'a': IntVar(), 'b': IntVar(), 'g': IntVar(), \
+            'p': IntVar(), 'v': IntVar(), 'c': IntVar(), 'm': IntVar(), 'j': IntVar(), 'k': IntVar()}
         self.duration_var = StringVar()
         self.notes_var = StringVar()
         self.eeg_check_value = IntVar()
@@ -328,8 +335,8 @@ class PV(ttk.Frame):
         nb.enable_traversal()
          
         nb.pack(fill=BOTH, expand=Y, padx=2, pady=3)
-        self._create_session_tab(nb)
-        self._create_request_tab(nb)
+#        self._create_session_tab(nb)
+#        self._create_request_tab(nb)
         self._create_UI_tab(nb)  #NEW
         self._create_Settings_tab(nb)  #NEW
                                 
@@ -384,126 +391,9 @@ class PV(ttk.Frame):
             self.sessions_df.set_value(current_index, 'hrt', self.heart_check_value.get())
         elif whichcheck == 'breath':
             self.sessions_df.set_value(current_index, 'bth', self.breath_check_value.get())
-        
-    def _create_session_tab(self, nb):
-        """
-        Creates the Session tab in the Physiology Viewer.
-        """
-        # frame to hold contentx
-        self.frame = ttk.Frame(nb, height='4i', width='6i', name='session')
-        # widgets to be displayed on 'Session' tab
-            
-        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
-#        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.person_title_var, state='readonly')
-        sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
-        self.cbx1['values'] = [row for row in sessions_list]
-        self.cbx1.current(29) # Sets current value to first session involving brain waves
-        self.cbx1.bind("<<ComboboxSelected>>", self.update_session_data)
-        
-        lbl1 = ttk.Label(self.frame, width=6, textvariable=self.index_var)
-        lbl2 = ttk.Label(self.frame, width=6, textvariable=self.recording_var)
-        etr1 = ttk.Entry(self.frame, width=8, textvariable=self.subject_var)
-        etr2 = ttk.Entry(self.frame, width=24, textvariable=self.date_time_var)
-        etr3 = ttk.Entry(self.frame, width=8, textvariable=self.duration_var)
-        self.txt1 = Text(self.frame, width=50, height=10, wrap=tk.WORD)
-        notes = self.sessions_df['notes'][self.index_var.get()]
-        self.txt1.insert(END, notes)
-        self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
-#        print(txt1.get(1))
-        chk1 = ttk.Checkbutton(self.frame, text='EEG', variable=self.eeg_check_value, command=lambda: self.update_check('eeg')) 
-        chk2 = ttk.Checkbutton(self.frame, text='Heart', variable=self.heart_check_value, command=lambda: self.update_check('heart')) 
-        chk3 = ttk.Checkbutton(self.frame, text='Breath', variable=self.breath_check_value, command=lambda: self.update_check('breath'))
-        lbl3 = ttk.Label(self.frame, width=6, textvariable=self.sample_rate_var)
-        btn1 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
-        
-        self.cbx1.grid(row=1, column=2, columnspan=3, sticky=W)
-#        etr1.grid(row=1, column=2, columnspan=2)
-        lbl1.grid(row=1, column=1, sticky=W)
-        lbl2.grid(row=2, column=1, sticky=W)
-        etr1.grid(row=2, column=2, sticky=W)
-        etr2.grid(row=2, column=3, sticky=W)
-        etr3.grid(row=2, column=4, sticky=W)
-        self.txt1.grid(row=3, column=1, rowspan=4, columnspan=4, sticky=W)
-        chk1.grid(row=3, column=5, sticky=W)
-        chk2.grid(row=4, column=5, sticky=W)
-        chk3.grid(row=5, column=5, sticky=W)
-        lbl3.grid(row=6, column=5, sticky=W)
-        btn1.grid(row=7, column=5, sticky=W)
-        
-        # position and set resize behaviour
-#        lbl.grid(row=0, column=0, columnspan=2, sticky='new', pady=5)
-#        btn.grid(row=1, column=0, pady=(2,4))
-        self.frame.rowconfigure(1, weight=1)
-        self.frame.columnconfigure((0,1), weight=1, uniform=1)
-         
-        # add to notebook (underline = index for short-cut character)
-        nb.add(self.frame, text='Session', underline=0, padding=2)
-        
-    def _create_request_tab(self, nb):
-        """
-        Creates the Graphs Request tab in the Physiology Viewer.
-        """
-        self.frame = ttk.Frame(nb, name='request')
-         
-        # widgets to be displayed on 'Request' tab
-        msg = ["Mean values: d=delta, t=theta, a=alpha, b=beta, g=gamma,\n\
-j=jaw_clench, k=blink, c=concentration, m=mellow\n\
-Specify graphs for individual sensors: alf=(alpha, left, front)\n\
-Specify multi-line graphs with '&': brf&drb&j\n\
-Tables of values: median, mean; Polar chart: radar\n\
-Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
-         
-        lbl = ttk.Label(self.frame, wraplength='6i', justify=LEFT, anchor=N,
-                        text=''.join(msg))
-        lbl11 = ttk.Label(self.frame, text='t_initial', width=10)
-        lbl12 = ttk.Label(self.frame, text='t_final', width=10)
-        # position and set resize behaviour
-        lbl.grid(row=0, column=0, columnspan=4, sticky='W', pady=5)
-        lbl11.grid(row=1, column=2, sticky='SW')
-        lbl12.grid(row=1, column=3, sticky='SW')
-
-        self.interval.set(0)
-        self.int_value = 0
-
-        # Add radiobuttons for intervals and text entry boxes for initial and final times        
-        etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
-        etr.grid(row=1, column=0, columnspan=3, sticky=W)
-        etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
-        
-        cbx = ttk.Checkbutton(self.frame, text="absolute", variable=self.absolute_check_value, \
-                            onvalue=1, offvalue=0)
-        cbx.grid(row=1, column=1, sticky=W)
-        
-        #print('button selected = '+str(self.interval.get()))
-        
-        for i in range(9):
-            self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
-                              self.update_value(var, i, 0))
-            self.sva[i][1].trace("w", lambda name, index, mode, var=self.sva[i][1], i=i:
-                              self.update_value(var, i, 1))
-            self.sva[i][2].trace("w", lambda name, index, mode, var=self.sva[i][2], i=i:
-                              self.update_value(var, i, 2))
-            self.RadioObject.append(ttk.Radiobutton(self.frame, textvariable=self.sva[i][0], variable=self.interval, value=i).grid(row=i+2, column=0, sticky=W))     # radiobutton
-            self.interval.set(0)
-            self.EntryObject.append(ttk.Entry(self.frame, width=20, textvariable=self.sva[i][0]).grid(row=i+2, column=1, sticky=W)) # interval entry
-            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][1]).grid(row=i+2, column=2, sticky=W)) #ti entry
-            self.EntryObject.append(ttk.Entry(self.frame, width=8, textvariable=self.sva[i][2]).grid(row=i+2, column=3, sticky=W)) # tf entry
-
-        btn2 = ttk.Button(self.frame, text='Save', command=self.save_session_data)
-        btn2.grid(row=11, column=2, columnspan=2)
-        self.interval.set(0)
-        #print('in _create_request_tab; interval.get() = '+str(self.interval.get()))
-        self.int_value = 0
-
-        self.frame.rowconfigure(1, weight=1)
-        self.frame.columnconfigure((0,1), weight=1, uniform=1)
-        nb.add(self.frame, text='Graphs Request', underline=0, padding=2)
-        #self.RadioObject[0].invoke() 
-        
     def set_table_type(self):
         pass
          
-
     def _create_UI_tab(self, nb):
         """
         Creates the Main user interface (UI) tab in the Physiology Viewer.
@@ -511,12 +401,12 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         def configure_widgets():
             disable_dict = {'timeseries': [cbx2],
                             'spectrogram': [check1, cbx2],
-                            'psd': [cbx2, etr, check1],
-                            'raweeg': [cbx2, etr, check1],
-                            'radar': [cbx2, etr, check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
-                            'table': [etr, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19]}
-            enable_dict = {'timeseries': [etr, check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
-                            'spectrogram': [etr, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
+                            'psd': [cbx2, check1],
+                            'raweeg': [cbx2, check1],
+                            'radar': [cbx2, check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
+                            'table': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19]}
+            enable_dict = {'timeseries': [check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
+                            'spectrogram': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
                             'psd': [],
                             'raweeg': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
                             'radar': [check1],
@@ -561,9 +451,35 @@ Raw EEG for four sensors: lb, lf, rf, rb; Spectrograms: s1, s2, s3, s4"]
         rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: configure_widgets())
 
         # Text entry box for time series graph commands        
-        etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
-        etr.grid(row=5, column=1, sticky=W)
-        etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+        #etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
+        #etr.grid(row=5, column=1, sticky=W)
+        #etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+        frm1 = ttk.Frame(self.frame, borderwidth=2, width=20)
+        frm1.grid(row=5, column=1, sticky=W)
+        chk1 = ttk.Checkbutton(frm1, text='d', variable=self.data_type_var['d'])
+        chk2 = ttk.Checkbutton(frm1, text='t', variable=self.data_type_var['t'])
+        chk3 = ttk.Checkbutton(frm1, text='a', variable=self.data_type_var['a'])
+        chk4 = ttk.Checkbutton(frm1, text='b', variable=self.data_type_var['b'])
+        chk5 = ttk.Checkbutton(frm1, text='g', variable=self.data_type_var['g'])
+        chk6 = ttk.Checkbutton(frm1, text='p', variable=self.data_type_var['p'])
+        chk7 = ttk.Checkbutton(frm1, text='v', variable=self.data_type_var['v'])
+        chk8 = ttk.Checkbutton(frm1, text='c', variable=self.data_type_var['c'])
+        chk9 = ttk.Checkbutton(frm1, text='m', variable=self.data_type_var['m'])
+        chk10 = ttk.Checkbutton(frm1, text='j', variable=self.data_type_var['j'])
+        chk11 = ttk.Checkbutton(frm1, text='k', variable=self.data_type_var['k'])
+        
+        self.data_type_var['a'].set(1) # Select checkbox for alpha by default
+        chk1.grid(row=0, column=0)
+        chk2.grid(row=0, column=1)
+        chk3.grid(row=0, column=2)
+        chk4.grid(row=0, column=3)
+        chk5.grid(row=0, column=4)
+        chk6.grid(row=1, column=0)
+        chk7.grid(row=1, column=1)
+        chk8.grid(row=1, column=2)
+        chk9.grid(row=1, column=3)
+        chk10.grid(row=1, column=4)
+        chk11.grid(row=1, column=5)
 
         cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
         cbx2.grid(row=11, column=1, sticky=W)
@@ -988,37 +904,26 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         
     def draw_graph(self, grph, data):
         """
-        In a new pop-up window, draws a set of axes with labels and title,
-        and plots data for variables requested in grph command.
+        In a new pop-up window, draw a set of axes with labels and title,
+        and plot data for variables requested in grph command.
         
         Median values are plotted for relative values; mean values for absolute.
         
-        Single letters (d=delta, t=theta, a=alpha, b=beta, g=gamma) plot
-        average median values of four sensors (lb, lf, rf, fb).
+        Use single letter commands to plot graphs of median values
+        (d=delta, t=theta, a=alpha, b=beta, g=gamma).
         
         Variables include j=jaw clench, k=blink, c=concentration, m=mellow.
         
-        When respiration and breathing data are available, plots can
+        When respiration and breathing data are available, plots cmay
         include, p=breath, v=heart
         
-        3-letter codes plot values for individual sensors, e.g., 
-        alf=(alpha, left, front), drb=(delta, right, back).
-        
-        Multiple variable can be displayed on the same set of axes using '&',
-        for example, 'a&b', 'dlb&j', 'p&v'
+        Multiple variables can be displayed on the same set of axes using '&',
+        for example, 'a&b', 'd&j', 'p&v'
         
         Minimum and maximum ordinate values are chosen automatically by
         plot command in matplotlib.
-        
-        Raw EEG signal for four sensors are plotted using lb, lf, rf, rb.
-        
-        Fourier transfomations of raw EEG signals are displayed in magnitude vs.
-        frequency plots.
-        
-        Spectrograms for sensors lb, lf, rf, rb are plotted using commands
-        s1, s2, s3, s4 respectively.
-        
         """
+        
         global current_index
         #print('current_index = '+str(current_index))
     
@@ -1042,8 +947,10 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         graph_title = ''
         i = 0
 
+        print('grph='+str(grph))
+        print('data='+str(data))
         for d in data:
-            #print('d='+str(d))
+            print('d='+str(d))
             if self.eeg_check_value.get() > 0: # If data exists for eeg
                 if d in set1: # Mean value among 4 sensors
                     d = d+'_m' # 'd' is used to request graph of delta band, but 'd_m' is the key for the dictionaries
