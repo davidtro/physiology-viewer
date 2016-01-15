@@ -275,6 +275,12 @@ class PV(ttk.Frame):
         self.eeg_check_value = IntVar()
         self.heart_check_value = IntVar()
         self.breath_check_value = IntVar()
+        self.eeg_label = StringVar()
+        self.eeg_label.set(' EEG (220 Hz)')
+        self.heart_label = StringVar()
+        self.heart_label.set(' Heart (220 Hz)')
+        self.breath_label = StringVar()
+        self.breath_label.set(' Breath (22 Hz)')
         self.sample_rate_var = IntVar()
         self.absolute_check_value = IntVar()
         self.tv = StringVar()  # Value of text entry box for graph commands
@@ -353,7 +359,7 @@ class PV(ttk.Frame):
             """
             global current_index
             current_index =  self.cbx1.current()
-            print('current_index = '+str(current_index))
+            #print('current_index = '+str(current_index))
             self.index_var.set(current_index)
             self.recording_var.set(self.sessions_df.ix[current_index]['recording'])
             self.person_var.set(self.sessions_df.ix[current_index]['person'])
@@ -367,6 +373,12 @@ class PV(ttk.Frame):
             self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
             self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
             self.sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
+            #print('current_index=', current_index)
+            #print('eeg_check_value=', self.eeg_check_value.get())
+            #print('heart_check_value=', self.heart_check_value.get())
+            #print('breath_check_value=', self.breath_check_value.get())
+            configure_widgets()
+            update_labels()
     #        interval1 = str(self.interval1_var.get())
     #        print('interval1 = '+str(interval1))
             self.sva[0][0].set('entire session') # Initial line is 
@@ -383,20 +395,57 @@ class PV(ttk.Frame):
     
             
             print(self.notes_var.get())
-            self.update_graph_data(current_index)
+            update_graph_data(current_index)
             
+        def update_graph_data(index):
+            """
+            Using the values of the checkboxes 'eeg', 'hrt' and 'bth',
+            reads data for session index from the corresponding .h5 file and 
+            populates the dataframes absolute_df, relative_df, user_df and raw_df, and
+            cardio_df and resp_df.
+            """
+            global recording, sessions_df
+    #        global relative_df, user_df, raw_df, cardio_df, resp_df
+            if 0 < index < 29:
+                recording = 'lqt'+str(index)
+            elif 29 <= index:
+                recording = 'rec'+str(index-27)
+            else:
+                print('index out of range')
+            #print('recording='+recording)
+            
+            # Reset dataframes to None to clear out residual data from previous selections
+            self.absolute_df = None
+            self.relative_df = None
+            self.user_df = None
+            self.raw_df = None
+            self.cardio_df = None
+            self.resp_df = None
+            
+            # Read data from files indicated as existent by checkboxes
+            if str(self.sessions_df['eeg'][index]) == '1':
+                #print('reading EEG data')
+                self.absolute_df = pd.read_hdf(self.path+recording+'_eeg_abs.h5', 'abs_data')
+                self.relative_df = pd.read_hdf(self.path+recording+'_eeg_rel.h5', 'rel_data')
+                self.user_df = pd.read_hdf(self.path+recording+'_eeg_user.h5', 'user_data')
+                self.raw_df = pd.read_hdf(self.path+recording+'_eeg_raw.h5', 'raw_data')
+                nsamples = len(self.raw_df)
+                self.fs = 220.0
+                timeseries = np.arange(nsamples)/self.fs
+                self.raw_df.insert(0, 't', pd.Series(timeseries, index=self.raw_df.index))
+            if str(self.sessions_df['hrt'][index]) == '1':
+                #print('reading cardio data')
+                # Try to normalize heart values to minimize overlap with breath and eeg
+                self.cardio_df = (pd.read_hdf(self.path+recording+'_cardio.h5', 'cardio_data') + 1.0)/8.0 + 0.5
+            if str(self.sessions_df['bth'][index]) == '1':
+                #print('reading respiration data')
+                # Try to normalize breath values to minimize overlap with heart and eeg
+                self.resp_df = (pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)
+    
         def update_notes(notes):
             self.sessions_df.set(current_index, 'notes', notes)
             print(notes)
             
-        def update_check(whichcheck):
-            if whichcheck == 'eeg':
-                self.sessions_df.set_value(current_index, 'eeg', self.eeg_check_value.get())
-            elif whichcheck == 'heart':
-                self.sessions_df.set_value(current_index, 'hrt', self.heart_check_value.get())
-            elif whichcheck == 'breath':
-                self.sessions_df.set_value(current_index, 'bth', self.breath_check_value.get())
-             
         def configure_widgets():
             if self.eeg_check_value.get():
                 check1.configure(state='normal')
@@ -420,7 +469,7 @@ class PV(ttk.Frame):
                 chk9.configure(state='disabled')
                 chk10.configure(state='disabled')
                 chk11.configure(state='disabled')
-            if self.breath_check_value.get:
+            if self.breath_check_value.get():
                 chk6.configure(state='normal')
             else:
                 chk6.configure(state='disabled')
@@ -455,6 +504,23 @@ class PV(ttk.Frame):
                 widget.configure(state='disabled')
             for widget in widgets_to_enable:
                 widget.configure(state='normal')
+
+        def update_labels():
+            #print('entering update_labels')
+            #print('heart_check_value=', self.heart_check_value.get())
+            if self.eeg_check_value.get():
+                self.eeg_label.set(' EEG (220 Hz)')
+            else:
+                self.eeg_label.set('')
+            if self.heart_check_value.get():
+                self.heart_label.set(' Heart (220 Hz)')
+            else:
+                self.heart_label.set('')
+            if self.breath_check_value.get():
+                self.breath_label.set(' Breath (22 Hz)')
+            else:
+                self.breath_label.set('')
+            #print('heart_label=',self.heart_label.get())
             
         # frame to hold contentx
         self.frame = ttk.Frame(nb, height='10i', width='8i', name='main')
@@ -480,16 +546,13 @@ class PV(ttk.Frame):
         self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
-        if self.eeg_check_value.get():
-            lbl1 = ttk.Label(self.frame, text=' EEG (220 Hz)', width=15)
-            lbl1.grid(row=2, column=4, sticky=NW)
-        if self.heart_check_value.get():
-            lbl2 = ttk.Label(self.frame, text=' Heart (220 Hz)', width=15)
-            lbl2.grid(row=3, column=4, sticky=NW)
-        if self.breath_check_value.get():
-            lbl3 = ttk.Label(self.frame, text=' Breath (22 Hz)', width=15)
-            lbl3.grid(row=4, column=4, sticky=NW)
-        
+
+        lbl1 = ttk.Label(self.frame, textvariable=self.eeg_label, width=15)
+        lbl1.grid(row=2, column=4, sticky=NW)
+        lbl2 = ttk.Label(self.frame, textvariable=self.heart_label, width=15)
+        lbl2.grid(row=3, column=4, sticky=NW)
+        lbl3 = ttk.Label(self.frame, textvariable=self.breath_label, width=15)
+        lbl3.grid(row=4, column=4, sticky=NW)
 
         rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: update_widgets())
         rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: update_widgets())
@@ -606,51 +669,6 @@ class PV(ttk.Frame):
         nb.add(self.frame, text='Settings', underline=0, padding=2)
         
         
-    def update_graph_data(self, index):
-        """
-        Using the values of the checkboxes 'eeg', 'hrt' and 'bth',
-        reads data for session index from the corresponding .h5 file and 
-        populates the dataframes absolute_df, relative_df, user_df and raw_df, and
-        cardio_df and resp_df.
-        """
-        global recording, sessions_df
-#        global relative_df, user_df, raw_df, cardio_df, resp_df
-        if 0 < index < 29:
-            recording = 'lqt'+str(index)
-        elif 29 <= index:
-            recording = 'rec'+str(index-27)
-        else:
-            print('index out of range')
-        #print('recording='+recording)
-        
-        # Reset dataframes to None to clear out residual data from previous selections
-        self.absolute_df = None
-        self.relative_df = None
-        self.user_df = None
-        self.raw_df = None
-        self.cardio_df = None
-        self.resp_df = None
-        
-        # Read data from files indicated as existent by checkboxes
-        if str(self.sessions_df['eeg'][index]) == '1':
-            #print('reading EEG data')
-            self.absolute_df = pd.read_hdf(self.path+recording+'_eeg_abs.h5', 'abs_data')
-            self.relative_df = pd.read_hdf(self.path+recording+'_eeg_rel.h5', 'rel_data')
-            self.user_df = pd.read_hdf(self.path+recording+'_eeg_user.h5', 'user_data')
-            self.raw_df = pd.read_hdf(self.path+recording+'_eeg_raw.h5', 'raw_data')
-            nsamples = len(self.raw_df)
-            self.fs = 220.0
-            timeseries = np.arange(nsamples)/self.fs
-            self.raw_df.insert(0, 't', pd.Series(timeseries, index=self.raw_df.index))
-        if str(self.sessions_df['hrt'][index]) == '1':
-            #print('reading cardio data')
-            # Try to normalize heart values to minimize overlap with breath and eeg
-            self.cardio_df = (pd.read_hdf(self.path+recording+'_cardio.h5', 'cardio_data') + 1.0)/8.0 + 0.5
-        if str(self.sessions_df['bth'][index]) == '1':
-            #print('reading respiration data')
-            # Try to normalize breath values to minimize overlap with heart and eeg
-            self.resp_df = (pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)
-
     def draw_spectrogram(self):
         pass
     
