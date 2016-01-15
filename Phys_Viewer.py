@@ -340,65 +340,96 @@ class PV(ttk.Frame):
         self._create_UI_tab(nb)  #NEW
         self._create_Settings_tab(nb)  #NEW
                                 
-    def update_session_data(self, event):
-        """ 
-        This routine updates the contents of the dataframe sessions_df
-        whenever a new session is selected in the drop-down combobox cbx1
-        on the _create_session_tab.
-        """
-        global current_index
-        current_index =  self.cbx1.current()
-        print('current_index = '+str(current_index))
-        self.index_var.set(current_index)
-        self.recording_var.set(self.sessions_df.ix[current_index]['recording'])
-        self.person_var.set(self.sessions_df.ix[current_index]['person'])
-        self.subject_var.set(self.sessions_df.ix[current_index]['subject'])
-        self.date_time_var.set(self.sessions_df.ix[current_index]['date_time'])
-        self.duration_var.set(self.sessions_df.ix[current_index]['duration'])
-        notes = self.sessions_df['notes'][self.index_var.get()]
-        self.txt1.delete(1.0, END) # Delete from line 1, character 0 to end of text
-        self.txt1.insert(END, notes)
-        self.eeg_check_value.set(self.sessions_df.ix[current_index]['eeg'])
-        self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
-        self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
-        self.sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
-#        interval1 = str(self.interval1_var.get())
-#        print('interval1 = '+str(interval1))
-        self.sva[0][0].set('entire session') # Initial line is 
-        # initialized with ti=0, tf=duration
-        self.sva[0][1].set('0')
-        duration = self.duration_var.get()
-        self.sva[0][2].set(duration)
-        for i in range(1,9): # fill in user-defined intervals in rows 1-8
-            #print('i = '+str(i))
-            #print('current_index = '+str(current_index))
-            self.sva[i][0].set(self.sessions_df.ix[current_index]['interval'+str(i)])
-            self.sva[i][1].set(self.sessions_df.ix[current_index]['ti'+str(i)])
-            self.sva[i][2].set(self.sessions_df.ix[current_index]['tf'+str(i)])
 
-        
-        print(self.notes_var.get())
-        self.update_graph_data(current_index)
-        
-    def update_notes(self, notes):
-        self.sessions_df.set(current_index, 'notes', notes)
-        print(notes)
-        
-    def update_check(self, whichcheck):
-        if whichcheck == 'eeg':
-            self.sessions_df.set_value(current_index, 'eeg', self.eeg_check_value.get())
-        elif whichcheck == 'heart':
-            self.sessions_df.set_value(current_index, 'hrt', self.heart_check_value.get())
-        elif whichcheck == 'breath':
-            self.sessions_df.set_value(current_index, 'bth', self.breath_check_value.get())
-    def set_table_type(self):
-        pass
-         
     def _create_UI_tab(self, nb):
         """
         Creates the Main user interface (UI) tab in the Physiology Viewer.
         """
+        def update_session_data(event):
+            """ 
+            This routine updates the contents of the dataframe sessions_df
+            whenever a new session is selected in the drop-down combobox cbx1
+            on the _create_UI_tab.
+            """
+            global current_index
+            current_index =  self.cbx1.current()
+            print('current_index = '+str(current_index))
+            self.index_var.set(current_index)
+            self.recording_var.set(self.sessions_df.ix[current_index]['recording'])
+            self.person_var.set(self.sessions_df.ix[current_index]['person'])
+            self.subject_var.set(self.sessions_df.ix[current_index]['subject'])
+            self.date_time_var.set(self.sessions_df.ix[current_index]['date_time'])
+            self.duration_var.set(self.sessions_df.ix[current_index]['duration'])
+            notes = self.sessions_df['notes'][self.index_var.get()]
+            self.txt1.delete(1.0, END) # Delete from line 1, character 0 to end of text
+            self.txt1.insert(END, notes)
+            self.eeg_check_value.set(self.sessions_df.ix[current_index]['eeg'])
+            self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
+            self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
+            self.sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
+    #        interval1 = str(self.interval1_var.get())
+    #        print('interval1 = '+str(interval1))
+            self.sva[0][0].set('entire session') # Initial line is 
+            # initialized with ti=0, tf=duration
+            self.sva[0][1].set('0')
+            duration = self.duration_var.get()
+            self.sva[0][2].set(duration)
+            for i in range(1,9): # fill in user-defined intervals in rows 1-8
+                #print('i = '+str(i))
+                #print('current_index = '+str(current_index))
+                self.sva[i][0].set(self.sessions_df.ix[current_index]['interval'+str(i)])
+                self.sva[i][1].set(self.sessions_df.ix[current_index]['ti'+str(i)])
+                self.sva[i][2].set(self.sessions_df.ix[current_index]['tf'+str(i)])
+    
+            
+            print(self.notes_var.get())
+            self.update_graph_data(current_index)
+            
+        def update_notes(notes):
+            self.sessions_df.set(current_index, 'notes', notes)
+            print(notes)
+            
+        def update_check(whichcheck):
+            if whichcheck == 'eeg':
+                self.sessions_df.set_value(current_index, 'eeg', self.eeg_check_value.get())
+            elif whichcheck == 'heart':
+                self.sessions_df.set_value(current_index, 'hrt', self.heart_check_value.get())
+            elif whichcheck == 'breath':
+                self.sessions_df.set_value(current_index, 'bth', self.breath_check_value.get())
+             
         def configure_widgets():
+            if self.eeg_check_value.get():
+                check1.configure(state='normal')
+                chk1.configure(state='normal')
+                chk2.configure(state='normal')
+                chk3.configure(state='normal')
+                chk4.configure(state='normal')
+                chk5.configure(state='normal')
+                chk8.configure(state='normal')
+                chk9.configure(state='normal')
+                chk10.configure(state='normal')
+                chk11.configure(state='normal')
+            else:
+                check1.configure(state='disabled')
+                chk1.configure(state='disabled')
+                chk2.configure(state='disabled')
+                chk3.configure(state='disabled')
+                chk4.configure(state='disabled')
+                chk5.configure(state='disabled')
+                chk8.configure(state='disabled')
+                chk9.configure(state='disabled')
+                chk10.configure(state='disabled')
+                chk11.configure(state='disabled')
+            if self.breath_check_value.get:
+                chk6.configure(state='normal')
+            else:
+                chk6.configure(state='disabled')
+            if self.heart_check_value.get():
+                chk7.configure(state='normal')
+            else:
+                chk7.configure(state='disabled')
+
+        def update_widgets():
             disable_dict = {'timeseries': [cbx2],
                             'spectrogram': [check1, cbx2],
                             'psd': [cbx2, check1, \
@@ -436,7 +467,7 @@ class PV(ttk.Frame):
         sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
         self.cbx1['values'] = [row for row in sessions_list]
         self.cbx1.current(29) # Sets current value to first session involving brain waves
-        self.cbx1.bind("<<ComboboxSelected>>", self.update_session_data)
+        self.cbx1.bind("<<ComboboxSelected>>", update_session_data)
         self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
         
         check1 = ttk.Checkbutton(self.frame, text="absolute", width=20, variable=self.absolute_check_value, \
@@ -449,21 +480,23 @@ class PV(ttk.Frame):
         self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
-
-        lbl1 = ttk.Label(self.frame, text=' EEG (220 Hz)', width=15)
-        lbl2 = ttk.Label(self.frame, text=' Heart (220 Hz)', width=15)
-        lbl3 = ttk.Label(self.frame, text=' Breath (22 Hz)', width=15)
+        if self.eeg_check_value.get():
+            lbl1 = ttk.Label(self.frame, text=' EEG (220 Hz)', width=15)
+            lbl1.grid(row=2, column=4, sticky=NW)
+        if self.heart_check_value.get():
+            lbl2 = ttk.Label(self.frame, text=' Heart (220 Hz)', width=15)
+            lbl2.grid(row=3, column=4, sticky=NW)
+        if self.breath_check_value.get():
+            lbl3 = ttk.Label(self.frame, text=' Breath (22 Hz)', width=15)
+            lbl3.grid(row=4, column=4, sticky=NW)
         
-        lbl1.grid(row=2, column=4, sticky=NW)
-        lbl2.grid(row=3, column=4, sticky=NW)
-        lbl3.grid(row=4, column=4, sticky=NW)
 
-        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: configure_widgets())
-        rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: configure_widgets())
-        rdo3 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd', command=lambda: configure_widgets())
-        rdo4 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg', command=lambda: configure_widgets())
-        rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: configure_widgets())
-        rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: configure_widgets())
+        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: update_widgets())
+        rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: update_widgets())
+        rdo3 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd', command=lambda: update_widgets())
+        rdo4 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg', command=lambda: update_widgets())
+        rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: update_widgets())
+        rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: update_widgets())
 
         rdo1.grid(row=5, column=0, sticky=W)
         rdo2.grid(row=7, column=0, sticky=W)
@@ -477,16 +510,16 @@ class PV(ttk.Frame):
         #etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
         frm1 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for containing checkboxes d,t,a,b,g,...
         frm1.grid(row=5, column=1, sticky=W)
-        chk1 = ttk.Checkbutton(frm1, text='d', variable=self.data_type_var['d'])
-        chk2 = ttk.Checkbutton(frm1, text='t', variable=self.data_type_var['t'])
-        chk3 = ttk.Checkbutton(frm1, text='a', variable=self.data_type_var['a'])
-        chk4 = ttk.Checkbutton(frm1, text='b', variable=self.data_type_var['b'])
-        chk5 = ttk.Checkbutton(frm1, text='g', variable=self.data_type_var['g'])
-        chk6 = ttk.Checkbutton(frm1, text='p', variable=self.data_type_var['p'])
-        chk7 = ttk.Checkbutton(frm1, text='v', variable=self.data_type_var['v'])
-        chk8 = ttk.Checkbutton(frm1, text='c', variable=self.data_type_var['c'])
-        chk9 = ttk.Checkbutton(frm1, text='m', variable=self.data_type_var['m'])
-        chk10 = ttk.Checkbutton(frm1, text='j', variable=self.data_type_var['j'])
+        chk1 = ttk.Checkbutton(frm1, text='d ', variable=self.data_type_var['d'])
+        chk2 = ttk.Checkbutton(frm1, text='t ', variable=self.data_type_var['t'])
+        chk3 = ttk.Checkbutton(frm1, text='a ', variable=self.data_type_var['a'])
+        chk4 = ttk.Checkbutton(frm1, text='b ', variable=self.data_type_var['b'])
+        chk5 = ttk.Checkbutton(frm1, text='g ', variable=self.data_type_var['g'])
+        chk6 = ttk.Checkbutton(frm1, text='p ', variable=self.data_type_var['p'])
+        chk7 = ttk.Checkbutton(frm1, text='v ', variable=self.data_type_var['v'])
+        chk8 = ttk.Checkbutton(frm1, text='c ', variable=self.data_type_var['c'])
+        chk9 = ttk.Checkbutton(frm1, text='m ', variable=self.data_type_var['m'])
+        chk10 = ttk.Checkbutton(frm1, text='j ', variable=self.data_type_var['j'])
         chk11 = ttk.Checkbutton(frm1, text='k', variable=self.data_type_var['k'])
         
         self.data_type_var['a'].set(1) # Select checkbox for alpha by default
@@ -505,7 +538,7 @@ class PV(ttk.Frame):
         cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
         cbx2.grid(row=11, column=1, sticky=W)
         cbx2['values'] = ('mean', 'median', 'std', 'meanstd')
-        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
+#        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
         rdo11 = ttk.Radiobutton(self.frame, text='lb', variable=self.data_source_var, value='lb')
         rdo12 = ttk.Radiobutton(self.frame, text='lf', variable=self.data_source_var, value='lf')
@@ -1024,7 +1057,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         txt1.insert(END, dataline+header+values)
         txt1.grid(row=1, column=1, sticky=W)
         
-    def draw_graph(self, grph, data):
+    def draw_graph(self):
         """
         In a new pop-up window, draw a set of axes with labels and title,
         and plot data for variables requested in grph command.
@@ -1039,11 +1072,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         When respiration and breathing data are available, plots cmay
         include, p=breath, v=heart
         
-        Multiple variables can be displayed on the same set of axes using '&',
-        for example, 'a&b', 'd&j', 'p&v'
-        
-        Minimum and maximum ordinate values are chosen automatically by
-        plot command in matplotlib.
         """
         
         global current_index
@@ -1069,9 +1097,20 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         graph_title = ''
         i = 0
 
-        print('grph='+str(grph))
-        print('data='+str(data))
-        for d in data:
+        item_list = list(self.data_type_var.items())
+        print('plot: ')
+        for pair in item_list:
+            if pair[1].get():
+                print(pair[0])
+
+            
+        
+#        selection_list = list(self.data_type_var.values())
+#        for item in selection_list:
+#            print(item.get())
+#        for gtyp in plot_list:
+#            print(gtyp)
+        """
             print('d='+str(d))
             if self.eeg_check_value.get() > 0: # If data exists for eeg
                 if d in set1: # Mean value among 4 sensors
@@ -1170,7 +1209,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     plt.ylabel('pressure (arbitrary units)')
             if not ((self.eeg_check_value.get() > 0) or (self.heart_check_value.get() > 0) or (self.breath_check_value.get() > 0)):
                 print('No data found for '+str(d))
-
+        """
         # Adjust the width of the window so that legend is visible        
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.75, box.height*0.9])
