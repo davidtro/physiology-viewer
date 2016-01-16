@@ -14,7 +14,7 @@ http://still-breathing.net/software/
 
 import tkinter as tk
 from tkinter import BOTH, TOP, X, Y, N, E, W, NW, LEFT, END
-from tkinter import ttk, Frame, Text, IntVar, StringVar
+from tkinter import ttk, Frame, Text, IntVar, StringVar, DoubleVar
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -67,33 +67,13 @@ locations = [['d_m', 'dlb', 'dlf','drf','drb'],
              ['b_m', 'blb', 'blf','brf','brb'],
              ['g_m', 'glb', 'glf','grf','grb']]
 
-"""
+
 d_bands = {'d_m', 'dlb', 'dlf','drf','drb'}
 t_bands = {'t_m', 'tlb', 'tlf','trf','trb'}
 a_bands = {'a_m', 'alb', 'alf','arf','arb'}
 b_bands = {'b_m', 'blb', 'blf','brf','brb'}
 g_bands = {'g_m', 'glb', 'glf','grf','grb'}
-"""
 
-set1 = {'d', 't', 'a', 'b', 'g'}
-set2 = {'s1', 's2', 's3', 's4'}
-set3 = {'x', 'k', 'j'}
-"""
-set4 = {'dlb', 'dlf','drf','drb',
-        'tlb', 'tlf','trf','trb',
-        'alb', 'alf','arf','arb',
-        'blb', 'blf','brf','brb',
-        'glb', 'glf','grf','grb'}
-        """
-set5 = {'v','p'}
-set6 = {'lb', 'lf', 'rf', 'rb'} # commands for raw eeg (time domain)
-set7 = {'mean', 'median', 'std', 'meanstd'}
-set8 = {'c', 'm'} # commands for concentration and mellow
-set9 = {'radar'}
-set10 = {'psd1', 'psd2', 'psd3', 'psd4'} # commands for power spectral density (frequency domain)
-
-spect = {'s1':'lb', 's2':'lf', 's3':'rf', 's4':'rb'} # spectrograms
-psd = {'psd1':'lb', 'psd2':'lf', 'psd3':'rf', 'psd4':'rb'} # power spectral density graphs
 cardioresp = {'v':'mv', 'p':'kPa'}
 
 # The following is used for psd semi-log graphs only
@@ -136,16 +116,6 @@ band_patches = [
     
     v ~ heart signal (EKG) in mv
     p ~ breath in kPa
-    
-    lb ~ raw EEG for left back sensor
-    lf ~ raw EEG for left front sensor
-    rf ~ raw EEG for right front sensor
-    rb ~ raw EEG for right back sensor
-    
-    lbt ~ Fourier transformed lb signal
-    lft ~ Fourier transformed lf signal
-    rft ~ Fourier transformed rf signal
-    rbt ~ Fourier transformed rb signal
     
     means ~ numerical mean values and standard deviations for each of four sensors
     medians ~ numerical median values and standard deviations for each of four sensors
@@ -267,9 +237,19 @@ class PV(ttk.Frame):
         self.subject_var = StringVar()
         self.date_time_var = StringVar()
         self.graph_type_var = StringVar() # used by redio buttons for Time series, Radar, Table, etc.
+
         self.data_source_var = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
         self.data_type_var = {'d': IntVar(), 't': IntVar(), 'a': IntVar(), 'b': IntVar(), 'g': IntVar(), \
             'p': IntVar(), 'v': IntVar(), 'c': IntVar(), 'm': IntVar(), 'j': IntVar(), 'k': IntVar()}
+        self.abs_offset_var = DoubleVar()
+        self.abs_scale_var = DoubleVar()
+        self.c_scale_var = DoubleVar()
+        self.m_scale_var = DoubleVar()
+        self.p_offset_var = DoubleVar()
+        self.p_scale_var = DoubleVar()
+        self.v_offset_var = DoubleVar()
+        self.v_scale_var = DoubleVar()
+       
         self.duration_var = StringVar()
         self.notes_var = StringVar()
         self.eeg_check_value = IntVar()
@@ -309,6 +289,16 @@ class PV(ttk.Frame):
         self.graph_type_var.set('timeseries') # initialize graph_type radio button
         self.data_source_var.set('lb') # initialize data_source as 'lb'
         self.type_average_var.set('mean') # initialize for type of table
+        
+        self.abs_offset_var.set(1.667)
+        self.abs_scale_var.set(30.0)
+        self.c_scale_var.set(1.333)
+        self.m_scale_var.set(1.333)
+        self.p_offset_var.set(0.0)
+        self.p_scale_var.set(1.0)
+        self.v_offset_var.set(0.0)
+        self.v_scale_var.set(1.0)
+        
         self.tv.set('a&b')
         self.absolute_check_value.set(0)
         self.pack(expand=Y, fill=BOTH)
@@ -670,8 +660,18 @@ class PV(ttk.Frame):
         
         
     def draw_spectrogram(self):
-        pass
-    
+        graph_title = 'Spectrogram for '+str(spect[d])
+        plt.xlabel('time (s)')
+        plt.ylabel('frequency (Hz)')
+#                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
+        i = int(ti*self.fs)
+        f = int(tf*self.fs)
+        i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
+        signal = self.raw_df[spect[d]][i_range]
+        Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
+        plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
+        plt.xlim(ti, tf)
+
     def draw_psd(self):
         popup = tk.Tk()
         popup.wm_title("Power Spectral Density")
@@ -1075,6 +1075,21 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         txt1.insert(END, dataline+header+values)
         txt1.grid(row=1, column=1, sticky=W)
         
+    def band(self, key):
+        print('key=',key)
+        if key in d_bands:
+            return 'delta'
+        elif key in t_bands:
+            return 'theta'
+        elif key in a_bands:
+            return 'alpha'
+        elif key in b_bands:
+            return 'beta'
+        elif key in g_bands:
+            return 'gamma'
+        else:
+            return None
+
     def draw_graph(self):
         """
         In a new pop-up window, draw a set of axes with labels and title,
@@ -1116,25 +1131,16 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         i = 0
 
         item_list = list(self.data_type_var.items())
-        print('plot: ')
         for pair in item_list:
-            if pair[1].get():
-                print(pair[0])
-
-            
-        
-#        selection_list = list(self.data_type_var.values())
-#        for item in selection_list:
-#            print(item.get())
-#        for gtyp in plot_list:
-#            print(gtyp)
-        """
-            print('d='+str(d))
-            if self.eeg_check_value.get() > 0: # If data exists for eeg
-                if d in set1: # Mean value among 4 sensors
-                    d = d+'_m' # 'd' is used to request graph of delta band, but 'd_m' is the key for the dictionaries
-                if d in d_bands|t_bands|a_bands|b_bands|g_bands:
-                    band = self.band(d) # calls function band() which returns 'delta', 'theta', etc.
+            if pair[1].get(): # if the corresponding checkbox is checked
+                q = pair[0] # assign q to d, t, a, b, g, p, v, c, m, j, k
+                if q in {'d', 't', 'a', 'b', 'g'}:
+                    r = self.data_source_var.get() # assign r to value of selected radio button
+                    d = str(q+r) # concatenate two strings q and r
+                    band = self.band(d)
+                    #print('d=',d)
+                    #print('band=',band)
+                
                     if self.absolute_check_value.get(): # Absolute values
                         t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
                         graph_title = 'EEG of Absolute Power'
@@ -1145,9 +1151,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         self.ax.plot(self.absolute_df[band].index[t_range], 30*(self.absolute_df[band][t_range][d]+1.667), color=plotcolor[d], label=plotlabel[d])
                         mean_val = 30*(self.absolute_df[band][t_range][d]+1.667).mean()
                         std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std() # CHECK THIS!
-#                        self.ax.plot(self.absolute_df[band].index[t_range], 50*(self.absolute_df[band][t_range][d]+1), color=plotcolor[d], label=plotlabel[d])
-#                        mean_val = 50*(self.absolute_df[band][t_range][d]+1).mean()
-#                        std_val = 50*(self.absolute_df[band][t_range][d]+1).std()
                         plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
                         the_mean = 'mean '+str('%.1f' % mean_val)+u"\u00B1"+str('%.1f' % std_val) # median with +/- symbol for standard deviation
                         #print(the_median)
@@ -1179,26 +1182,18 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                     color=plotcolor[d], backgroundcolor='white',
                                     horizontalalignment='left', verticalalignment='top')
                         i+=1
-                elif d in set2: # spectrogram plots of frequency vs. time
-                    graph_title = 'Spectrogram for '+str(spect[d])
-                    plt.xlabel('time (s)')
-                    plt.ylabel('frequency (Hz)')
-#                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
-                    i = int(ti*self.fs)
-                    f = int(tf*self.fs)
-                    i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
-                    signal = self.raw_df[spect[d]][i_range]
-                    Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
-                    plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
-                    plt.xlim(ti, tf)
-                elif d in set3: # x ~ sway; k ~ blink; j ~ jaw clench
+                elif q in {'j', 'k'}:
+                    d = str(q)
+                    #print('d=',d)
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
                     self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
-                elif d in set8: # c ~ concentration; m~ mellow
+                elif q in {'c', 'm'}:
+                    d = str(q)
+                    #print('d=',d)
                     graph_title = "Muse Values for 'concentration' and 'mellow'"
                     plt.xlabel('time (s)')
                     plt.ylabel('fraction')
-#                    plt.ylim(0,1) # range of concentration and mellow are 0 - 1
+    #                    plt.ylim(0,1) # range of concentration and mellow are 0 - 1
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
                     self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range]*fourthirds, color=plotcolor[d], label=plotlabel[d])
                     mean_val = self.user_df[d][t_range][d].mean()*fourthirds
@@ -1211,23 +1206,23 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                 color=plotcolor[d], backgroundcolor='white',
                                 horizontalalignment='left', verticalalignment='top')
                     i+=1
-            if self.heart_check_value.get() > 0: # If data exists for heart
-                if d == 'v':
+                elif q in {'v'}:
+                    d = str(q)
+                    #print('d=',d)
                     t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 
                     self.ax.plot(self.cardio_df[cardioresp[d]].index[t_range], self.cardio_df[cardioresp[d]][t_range], color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Electrocardiogram'
                     plt.xlabel('time (s)')
                     plt.ylabel('voltage (arbitrary units)')
-            if self.breath_check_value.get() > 0: # If data exists for breath
-                if d == 'p':
+                elif q in {'p'}:
+                    d = str(q)
+                    #print('d=',d)
                     t_range = np.logical_and(ti < self.resp_df.index, self.resp_df.index < tf)
                     self.ax.plot(self.resp_df[cardioresp[d]].index[t_range], self.resp_df[cardioresp[d]][t_range], color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Respiration'
                     plt.xlabel('time (s)')
                     plt.ylabel('pressure (arbitrary units)')
-            if not ((self.eeg_check_value.get() > 0) or (self.heart_check_value.get() > 0) or (self.breath_check_value.get() > 0)):
-                print('No data found for '+str(d))
-        """
+                
         # Adjust the width of the window so that legend is visible        
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.75, box.height*0.9])
