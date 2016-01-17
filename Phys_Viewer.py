@@ -14,7 +14,7 @@ http://still-breathing.net/software/
 
 import tkinter as tk
 from tkinter import BOTH, TOP, X, Y, N, E, W, NW, LEFT, END
-from tkinter import ttk, Frame, Text, IntVar, StringVar, DoubleVar
+from tkinter import ttk, Canvas, Frame, Text, IntVar, StringVar, DoubleVar
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -262,7 +262,9 @@ class PV(ttk.Frame):
         self.breath_label = StringVar()
         self.breath_label.set(' Breath (22 Hz)')
         self.sample_rate_var = IntVar()
-        self.absolute_check_value = IntVar()
+#        self.absolute_check_value = IntVar()
+        self.rel_abs_var = StringVar()
+        self.med_mean_var = StringVar()
         self.tv = StringVar()  # Value of text entry box for graph commands
         self.type_average_var = StringVar() # type of average (mean, median, std, meanstd) in tables
     
@@ -300,7 +302,9 @@ class PV(ttk.Frame):
         self.v_scale_var.set(1.0)
         
         self.tv.set('a&b')
-        self.absolute_check_value.set(0)
+#        self.absolute_check_value.set(0)
+        self.rel_abs_var.set('relative')
+        self.med_mean_var.set('median')
         self.pack(expand=Y, fill=BOTH)
         self.master.title('Physiology Viewer')
         self.load_session_data()
@@ -438,7 +442,6 @@ class PV(ttk.Frame):
             
         def configure_widgets():
             if self.eeg_check_value.get():
-                check1.configure(state='normal')
                 chk1.configure(state='normal')
                 chk2.configure(state='normal')
                 chk3.configure(state='normal')
@@ -449,7 +452,6 @@ class PV(ttk.Frame):
                 chk10.configure(state='normal')
                 chk11.configure(state='normal')
             else:
-                check1.configure(state='disabled')
                 chk1.configure(state='disabled')
                 chk2.configure(state='disabled')
                 chk3.configure(state='disabled')
@@ -470,23 +472,23 @@ class PV(ttk.Frame):
 
         def update_widgets():
             disable_dict = {'timeseries': [cbx2],
-                            'spectrogram': [check1, cbx2],
-                            'psd': [cbx2, check1, \
+                            'spectrogram': [cbx2],
+                            'psd': [cbx2, \
                             chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'raweeg': [cbx2, check1, \
+                            'raweeg': [cbx2, \
                             chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'radar': [cbx2, check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
+                            'radar': [cbx2, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
                             chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
                             'table': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
                             chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11]}
-            enable_dict = {'timeseries': [check1, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
+            enable_dict = {'timeseries': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
                             chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
                             'spectrogram': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
                             chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
                             'psd': [],
                             'raweeg': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
-                            'radar': [check1],
-                            'table': [cbx2, check1]}
+                            'radar': [],
+                            'table': [cbx2]}
             graph = self.graph_type_var.get()
             widgets_to_disable = disable_dict[graph]
             widgets_to_enable = enable_dict[graph]
@@ -526,10 +528,6 @@ class PV(ttk.Frame):
         self.cbx1.bind("<<ComboboxSelected>>", update_session_data)
         self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
         
-        check1 = ttk.Checkbutton(self.frame, text="absolute", width=20, variable=self.absolute_check_value, \
-                            onvalue=1, offvalue=0)
-        check1.grid(row=5, column=2, sticky=W)
-
         self.txt1 = Text(self.frame, height=10, wrap=tk.WORD)
         notes = self.sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
@@ -588,30 +586,53 @@ class PV(ttk.Frame):
         chk10.grid(row=1, column=4)
         chk11.grid(row=1, column=5)
 
+        frm3 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons relative,absolute,median,mean,...
+        frm3.grid(row=5, column=2, sticky=W)
+
+        rdo20 = ttk.Radiobutton(frm3, text='relative', variable=self.rel_abs_var, value='relative')
+        rdo21 = ttk.Radiobutton(frm3, text='absolute', variable=self.rel_abs_var, value='absolute')
+        rdo22 = ttk.Radiobutton(frm3, text='median', variable=self.med_mean_var, value='median')
+        rdo23 = ttk.Radiobutton(frm3, text='mean', variable=self.med_mean_var, value='mean')
+
+        rdo20.grid(row=0, column=0, sticky=E)
+        rdo21.grid(row=0, column=1, sticky=E)
+        rdo22.grid(row=1, column=0, sticky=E)
+        rdo23.grid(row=1, column=1, sticky=E)
+
         cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
         cbx2.grid(row=11, column=1, sticky=W)
         cbx2['values'] = ('mean', 'median', 'std', 'meanstd')
 #        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
-        rdo11 = ttk.Radiobutton(self.frame, text='lb', variable=self.data_source_var, value='lb')
-        rdo12 = ttk.Radiobutton(self.frame, text='lf', variable=self.data_source_var, value='lf')
-        rdo13 = ttk.Radiobutton(self.frame, text='rf', variable=self.data_source_var, value='rf')
-        rdo14 = ttk.Radiobutton(self.frame, text='rb', variable=self.data_source_var, value='rb')
-        rdo15 = ttk.Radiobutton(self.frame, text='left', variable=self.data_source_var, value='left')
-        rdo16 = ttk.Radiobutton(self.frame, text='right', variable=self.data_source_var, value='right')
-        rdo17 = ttk.Radiobutton(self.frame, text='front', variable=self.data_source_var, value='front')
-        rdo18 = ttk.Radiobutton(self.frame, text='back', variable=self.data_source_var, value='back')
-        rdo19 = ttk.Radiobutton(self.frame, text='mean', variable=self.data_source_var, value='mean')
+        frm4 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons lf,rf,...
+        frm4.grid(row=5, column=3, sticky=W)
 
-        rdo11.grid(row=7, column=2, sticky=E)
-        rdo12.grid(row=5, column=2, sticky=E)
-        rdo13.grid(row=5, column=4, sticky=W)
-        rdo14.grid(row=7, column=4, sticky=W)
-        rdo15.grid(row=8, column=2, sticky=E)
-        rdo16.grid(row=8, column=4, sticky=W)
-        rdo17.grid(row=5, column=5, sticky=E)
-        rdo18.grid(row=7, column=5, sticky=E)
-        rdo19.grid(row=8, column=5, sticky=E)
+        rdo11 = ttk.Radiobutton(frm4, text='lb', variable=self.data_source_var, value='lb')
+        rdo12 = ttk.Radiobutton(frm4, text='lf', variable=self.data_source_var, value='lf')
+        rdo13 = ttk.Radiobutton(frm4, text='rf', variable=self.data_source_var, value='rf')
+        rdo14 = ttk.Radiobutton(frm4, text='rb', variable=self.data_source_var, value='rb')
+        rdo15 = ttk.Radiobutton(frm4, text='left', variable=self.data_source_var, value='left')
+        rdo16 = ttk.Radiobutton(frm4, text='right', variable=self.data_source_var, value='right')
+        rdo17 = ttk.Radiobutton(frm4, text='front', variable=self.data_source_var, value='front')
+        rdo18 = ttk.Radiobutton(frm4, text='back', variable=self.data_source_var, value='back')
+        rdo19 = ttk.Radiobutton(frm4, text='mean', variable=self.data_source_var, value='mean')
+
+        rdo11.grid(row=2, column=0, sticky=E)
+        rdo12.grid(row=0, column=0, sticky=E)
+        rdo13.grid(row=0, column=2, sticky=W)
+        rdo14.grid(row=2, column=2, sticky=W)
+        rdo15.grid(row=3, column=0, sticky=E)
+        rdo16.grid(row=3, column=2, sticky=W)
+        rdo17.grid(row=0, column=3, sticky=E)
+        rdo18.grid(row=2, column=3, sticky=E)
+        rdo19.grid(row=3, column=3, sticky=E)
+
+        frm411 = ttk.Frame(frm4, borderwidth=2, width=20) # frame for head graphic,...
+        frm411.grid(row=1, column=1)
+        
+        can = Canvas(frm411, width=55, height=55)
+        can.grid()
+        can.create_oval(2,2, 50, 50, fill="red")
 
         frm2 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for Intervals, t_initial, t_final
         frm2.grid(row=12, column=0, columnspan=3, sticky=W)
@@ -624,7 +645,7 @@ class PV(ttk.Frame):
         lbl5.grid(row=0, column=2, sticky=E)
         lbl6.grid(row=0, column=3, sticky=E)
 
-        btn0 = ttk.Button(self.frame, text='Plot', command=self.select_graph)
+        btn0 = ttk.Button(self.frame, text='Display', command=self.select_graph)
         btn0.grid(row=11, column=3)
 
         for i in range(9):
@@ -660,17 +681,67 @@ class PV(ttk.Frame):
         
         
     def draw_spectrogram(self):
-        graph_title = 'Spectrogram for '+str(spect[d])
+        popup = tk.Tk()
+        popup.wm_title("Physiology graph")
+        p = plt.figure()
+        self.ax = plt.subplot(111)
+        # In preparation for plotting, get the current radiobutton selection and the 
+        # corresponding initial and final times of the interval        
+        int_value = self.interval.get() # int_value represents the currently selected radiobutton
+        #print('int_value = '+str(int_value))
+        
+        ti = float(self.sva[int_value][1].get())
+        tf = float(self.sva[int_value][2].get())
+        r = self.data_source_var.get()
+        graph_title = 'Spectrogram for '+str(r)
         plt.xlabel('time (s)')
         plt.ylabel('frequency (Hz)')
-#                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
+# A future feature may be to display a spectrogram superimposed with a plot of
+# absolute EEG time series (2nd ordinate on the right), in which case this will
+# be a loop.
+#        item_list = list(self.data_type_var.items())
+#        for pair in item_list:
+#            if pair[1].get(): # if the corresponding checkbox is checked        
+        #                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
         i = int(ti*self.fs)
         f = int(tf*self.fs)
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
-        signal = self.raw_df[spect[d]][i_range]
+        signal = self.raw_df[r][i_range]
         Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
         plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
         plt.xlim(ti, tf)
+        recording = self.sessions_df.ix[current_index]['recording']
+        title = self.sessions_df.ix[current_index]['title']
+        subject = self.sessions_df.ix[current_index]['subject']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
+        if int_value > 0:
+            # Ensure that graph title includes interval name as entered
+            interval_string = self.sva[self.interval.get()][0].get()
+        else:
+            interval_string = 'full session'
+
+        plt.title(graph_title+'\n'\
+            +recording+' ('+subject+') '+title+'\n'\
+            +interval_string, fontsize = 'large')
+        plt.show()
+
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
+        
+        canvas = FigureCanvasTkAgg(p, master=popup)
+        canvas.show()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        btn = ttk.Button(popup, text="Close", command=popup.destroy)
+        btn.pack(side=tk.RIGHT)
+        
+        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+        toolbar.update()
+        canvas._tkcanvas.pack(side=tk.TOP, expand=1)
+        
+        popup.mainloop()
+        return None
 
     def draw_psd(self):
         popup = tk.Tk()
@@ -1135,7 +1206,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             if pair[1].get(): # if the corresponding checkbox is checked
                 q = pair[0] # assign q to d, t, a, b, g, p, v, c, m, j, k
                 if q in {'d', 't', 'a', 'b', 'g'}:
-                    r = self.data_source_var.get() # assign r to value of selected radio button
+                    r = self.data_source_var.get() # assign r to value of selected radio button ('lb','lf','rf','rb')
                     d = str(q+r) # concatenate two strings q and r
                     band = self.band(d)
                     #print('d=',d)
