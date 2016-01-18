@@ -262,7 +262,7 @@ class PV(ttk.Frame):
         self.breath_label = StringVar()
         self.breath_label.set(' Breath (22 Hz)')
         self.sample_rate_var = IntVar()
-#        self.absolute_check_value = IntVar()
+        self.absolute_check_value = IntVar()
         self.rel_abs_var = StringVar()
         self.med_mean_var = StringVar()
         self.tv = StringVar()  # Value of text entry box for graph commands
@@ -309,6 +309,7 @@ class PV(ttk.Frame):
         self.master.title('Physiology Viewer')
         self.load_session_data()
         self._create_viewer_panel()
+                
          
     def load_session_data(self):
         """
@@ -345,6 +346,8 @@ class PV(ttk.Frame):
         """
         Creates the Main user interface (UI) tab in the Physiology Viewer.
         """
+        self.widEEG = {}
+        
         def update_session_data(event):
             """ 
             This routine updates the contents of the dataframe sessions_df
@@ -371,7 +374,7 @@ class PV(ttk.Frame):
             #print('eeg_check_value=', self.eeg_check_value.get())
             #print('heart_check_value=', self.heart_check_value.get())
             #print('breath_check_value=', self.breath_check_value.get())
-            configure_widgets()
+            update_widgets()
             update_labels()
     #        interval1 = str(self.interval1_var.get())
     #        print('interval1 = '+str(interval1))
@@ -440,63 +443,43 @@ class PV(ttk.Frame):
             self.sessions_df.set(current_index, 'notes', notes)
             print(notes)
             
-        def configure_widgets():
-            if self.eeg_check_value.get():
-                chk1.configure(state='normal')
-                chk2.configure(state='normal')
-                chk3.configure(state='normal')
-                chk4.configure(state='normal')
-                chk5.configure(state='normal')
-                chk8.configure(state='normal')
-                chk9.configure(state='normal')
-                chk10.configure(state='normal')
-                chk11.configure(state='normal')
-            else:
-                chk1.configure(state='disabled')
-                chk2.configure(state='disabled')
-                chk3.configure(state='disabled')
-                chk4.configure(state='disabled')
-                chk5.configure(state='disabled')
-                chk8.configure(state='disabled')
-                chk9.configure(state='disabled')
-                chk10.configure(state='disabled')
-                chk11.configure(state='disabled')
-            if self.breath_check_value.get():
-                chk6.configure(state='normal')
-            else:
-                chk6.configure(state='disabled')
-            if self.heart_check_value.get():
-                chk7.configure(state='normal')
-            else:
-                chk7.configure(state='disabled')
-
         def update_widgets():
-            disable_dict = {'timeseries': [cbx2],
-                            'spectrogram': [cbx2],
-                            'psd': [cbx2, \
-                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'raweeg': [cbx2, \
-                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'radar': [cbx2, rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
-                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'table': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
-                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11]}
-            enable_dict = {'timeseries': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
-                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'spectrogram': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19, \
-                            chk1, chk2, chk3, chk4, chk5, chk6, chk7, chk8, chk9, chk10, chk11],
-                            'psd': [],
-                            'raweeg': [rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19],
-                            'radar': [],
-                            'table': [cbx2]}
             graph = self.graph_type_var.get()
-            widgets_to_disable = disable_dict[graph]
-            widgets_to_enable = enable_dict[graph]
-            for widget in widgets_to_disable:
-                widget.configure(state='disabled')
-            for widget in widgets_to_enable:
-                widget.configure(state='normal')
-
+            if self.eeg_check_value.get(): # EEG data exists
+                if graph == 'timeseries':
+                    self.enable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)
+                elif graph == 'spectrogram':
+                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
+                    self.enable_widget(self.widSrc)
+                elif graph == 'psd':
+                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
+                    self.enable_widget(self.widSrc)
+                elif graph == 'raweeg':
+                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
+                    self.enable_widget(self.widSrc)
+                elif graph == 'radar':
+                    self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
+                    self.enable_widget(self.widRelAbs)
+                elif graph == 'table':
+                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)
+            else:
+                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
+            if self.heart_check_value.get(): # heart data exists
+                if graph == 'timeseries':
+                    self.widHeart.configure(state='normal')
+                else:
+                    self.widHeart.configure(state='disabled')
+            else:
+                self.widHeart.configure(state='disabled')
+            if self.breath_check_value.get(): # breath data exists
+                if graph == 'timeseries':
+                    self.widBreath.configure(state='normal')
+                else:
+                    self.widBreath.configure(state='disabled')
+            else:
+                self.widBreath.configure(state='disabled')
+                    
+                
         def update_labels():
             #print('entering update_labels')
             #print('heart_check_value=', self.heart_check_value.get())
@@ -573,7 +556,6 @@ class PV(ttk.Frame):
         chk10 = ttk.Checkbutton(frm1, text='j ', variable=self.data_type_var['j'])
         chk11 = ttk.Checkbutton(frm1, text='k', variable=self.data_type_var['k'])
         
-        self.data_type_var['a'].set(1) # Select checkbox for alpha by default
         chk1.grid(row=0, column=0)
         chk2.grid(row=0, column=1)
         chk3.grid(row=0, column=2)
@@ -670,6 +652,23 @@ class PV(ttk.Frame):
         # add to notebook (underline = index for short-cut character)
         nb.add(self.frame, text='Main', underline=0, padding=2)
         
+        self.widBands = {chk1, chk2, chk3, chk4, chk5}
+        self.widUser = {chk8, chk9, chk10, chk11}
+        self.widRelAbs = {rdo20, rdo21}
+        self.widMedMean = {rdo22, rdo23}
+        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
+        self.widBreath = chk6
+        self.widHeart = chk7
+
+                
+    def disable_widget(self, widset):
+        for wid in widset:
+            wid.configure(state='disabled')
+
+    def enable_widget(self, widset):
+        for wid in widset:
+            wid.configure(state='normal')
+
     def _create_Settings_tab(self, nb):
         """
         Creates the Settings tab in the Physiology Viewer.
