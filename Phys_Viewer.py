@@ -262,7 +262,6 @@ class PV(ttk.Frame):
         self.breath_label = StringVar()
         self.breath_label.set(' Breath (22 Hz)')
         self.sample_rate_var = IntVar()
-        self.absolute_check_value = IntVar()
         self.rel_abs_var = StringVar()
         self.med_mean_var = StringVar()
         self.tv = StringVar()  # Value of text entry box for graph commands
@@ -573,6 +572,7 @@ class PV(ttk.Frame):
 
         rdo20 = ttk.Radiobutton(frm3, text='relative', variable=self.rel_abs_var, value='relative')
         rdo21 = ttk.Radiobutton(frm3, text='absolute', variable=self.rel_abs_var, value='absolute')
+
         rdo22 = ttk.Radiobutton(frm3, text='median', variable=self.med_mean_var, value='median')
         rdo23 = ttk.Radiobutton(frm3, text='mean', variable=self.med_mean_var, value='mean')
 
@@ -1211,7 +1211,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     #print('d=',d)
                     #print('band=',band)
                 
-                    if self.absolute_check_value.get(): # Absolute values
+                    if self.rel_abs_var.get()=='absolute': # Absolute values
                         t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
                         graph_title = 'EEG of Absolute Power'
                         plt.xlabel('time (s)')
@@ -1231,7 +1231,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                     color=plotcolor[d], backgroundcolor='white',
                                     horizontalalignment='left', verticalalignment='top')
                         i+=1
-                    else: # Relative values
+                    elif self.rel_abs_var.get()=='relative': # Relative values
                         t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
                         graph_title = 'EEG Relative Power'
                         plt.xlabel('time (s)')
