@@ -460,7 +460,8 @@ class PV(ttk.Frame):
                     self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
                     self.enable_widget(self.widRelAbs)
                 elif graph == 'table':
-                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)
+                    self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
+                    self.enable_widget(self.widRelAbs)
             else:
                     self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
             if self.heart_check_value.get(): # heart data exists
@@ -709,11 +710,15 @@ class PV(ttk.Frame):
         Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
         plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
         plt.xlim(ti, tf)
+
+        box = self.ax.get_position()
+        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
+
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+#        duration = self.sessions_df.ix[current_index]['duration']
+#        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -725,9 +730,9 @@ class PV(ttk.Frame):
             +interval_string, fontsize = 'large')
         plt.show()
 
-        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-        lbl0.pack(side=tk.BOTTOM, fill=X)
+#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+#        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -755,11 +760,14 @@ class PV(ttk.Frame):
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
 
+        box = self.ax.get_position()
+        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
+
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+#        duration = self.sessions_df.ix[current_index]['duration']
+#        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -791,9 +799,9 @@ class PV(ttk.Frame):
             +interval_string, fontsize = 'large')
         plt.show()
 
-        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-        lbl0.pack(side=tk.BOTTOM, fill=X)
+#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+#        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -821,11 +829,14 @@ class PV(ttk.Frame):
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
 
+        box = self.ax.get_position()
+        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
+
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+#        duration = self.sessions_df.ix[current_index]['duration']
+#        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -846,9 +857,9 @@ class PV(ttk.Frame):
             +interval_string, fontsize = 'large')
         plt.show()
 
-        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-        lbl0.pack(side=tk.BOTTOM, fill=X)
+#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+#        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -882,19 +893,19 @@ class PV(ttk.Frame):
             interval_string = self.sva[self.interval.get()][0].get()
         else:
             interval_string = 'full session'
-        print('interval_string='+interval_string)
+#        print('interval_string='+interval_string)
         popup = tk.Tk()
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
-        print('ti='+str('%.3f' % ti))
-        print('tf='+str('%.3f' % tf))
-        if self.absolute_check_value.get(): # Absolute values
+#        print('ti='+str('%.3f' % ti))
+#        print('tf='+str('%.3f' % tf))
+        if self.rel_abs_var.get()=='absolute': # Absolute values
             popup.wm_title("Radar Chart of Mean Absolute EEG values")
 #            graph_title = 'EEG Inverse Log of Mean Absolute Band Power'
             graph_title = 'EEG of Mean Absolute Band Power'
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
-            print('t_range for absolute')
-            print(t_range)
+#            print('t_range for absolute')
+#            print(t_range)
             values_list = []
             values_array = []
             for i in range(len(freqbands)):
@@ -905,12 +916,12 @@ class PV(ttk.Frame):
 #                    print(values_list)
                 values_array.append(values_list)
                 values_list = []
-        else: # Relative values
+        elif self.rel_abs_var.get()=='relative': # Relative values
             popup.wm_title("Radar Chart of Median Relative EEG values")
             graph_title = 'EEG Median Relative Band Power'
             t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
-            print('t_range for relative')
-            print(t_range)
+#            print('t_range for relative')
+#            print(t_range)
             values_list = []
             values_array = []
             for i in range(len(freqbands)):
@@ -921,8 +932,8 @@ class PV(ttk.Frame):
                 values_array.append(values_list)
                 values_list = []
         data = values_array
-        print('data=')
-        print(data)
+#        print('data=')
+#        print(data)
         spoke_labels = ['rb', 'rf', 'lf', 'lb']
         
     
@@ -937,10 +948,10 @@ class PV(ttk.Frame):
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.95, box.height*0.95])
 
-        if self.absolute_check_value.get(): # Absolute values
+        if self.rel_abs_var.get()=='absolute': # Absolute values
             plt.rgrids([20, 40, 60, 80])
             plt.ylim(0, 100)
-        else: # Relative values
+        elif self.rel_abs_var.get()=='relative': # Relative values
             plt.rgrids([0.2, 0.4, 0.6, 0.8])
             plt.ylim(0, 0.8)
 #        plt.rgrids([0.2, 0.4, 0.6, 0.8])
@@ -1027,7 +1038,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         values_array = []
         popup = tk.Tk()
         grph = self.type_average_var.get()
-        if self.absolute_check_value.get():  # Display absolute values normalized to range [0:100] in table
+        if self.rel_abs_var.get()=='absolute': # Display absolute values normalized to range [0:100] in table
             popup.wm_title("Average Absolute EEG values")
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
             if grph == 'meanstd': # columns are delta, d-std, theta, t-std, alpha, a-std, beta, b-std, gamma, gstd 
@@ -1085,7 +1096,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     for x in values_array[i]:
                         values = values + str('%.1f' % x) + ' '
                     values = values + '\n'
-        else:  # Display relative values in table
+        elif self.rel_abs_var.get()=='relative': # Display relative values in table
             popup.wm_title("Average Relative EEG values")
             t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
             if grph == 'meanstd': # columns are delta, d-std, theta, t-std, alpha, a-std, beta, b-std, gamma, gstd 
@@ -1160,6 +1171,17 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         else:
             return None
 
+    def med_mean_legend(self, avg_list, d):
+        """
+        Add requested median or mean legend to time-series graph.
+        avg_list is list of either median or mean values. 
+        """
+        i = len(avg_list)
+        self.ax.annotate(avg_list, xy=(1.01, 0.15),  xycoords='axes fraction',
+                    xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                    color=plotcolor[d], backgroundcolor='white',
+                    horizontalalignment='left', verticalalignment='top')
+
     def draw_graph(self):
         """
         In a new pop-up window, draw a set of axes with labels and title,
@@ -1198,7 +1220,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         median_list = []
         mean_list = []
         graph_title = ''
-        i = 0
+        i=0
 
         item_list = list(self.data_type_var.items())
         for pair in item_list:
@@ -1219,17 +1241,26 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         plt.ylim(0,100)
                         # The factor 30 and shift 1.667 are chosen empirically so that range of absolute power values are withing range 0 - 100
                         self.ax.plot(self.absolute_df[band].index[t_range], 30*(self.absolute_df[band][t_range][d]+1.667), color=plotcolor[d], label=plotlabel[d])
-                        mean_val = 30*(self.absolute_df[band][t_range][d]+1.667).mean()
-                        std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std() # CHECK THIS!
-                        plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
-                        the_mean = 'mean '+str('%.1f' % mean_val)+u"\u00B1"+str('%.1f' % std_val) # median with +/- symbol for standard deviation
-                        #print(the_median)
-                        mean_list.append(the_mean)
-                        #print('mean_list'+str(mean_list))
-                        self.ax.annotate(mean_list[i], xy=(1.01, 0.15),  xycoords='axes fraction',
-                                    xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                    color=plotcolor[d], backgroundcolor='white',
-                                    horizontalalignment='left', verticalalignment='top')
+                        if self.med_mean_var.get()=='median':
+                            median_val = 30*(self.absolute_df[band][t_range][d]+1.667).median()
+                            std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std()
+                            plt.axhline(median_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                            self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                        color=plotcolor[d], backgroundcolor='white',
+                                        horizontalalignment='left', verticalalignment='top')
+                        elif self.med_mean_var.get()=='mean':
+                            mean_val = 30*(self.absolute_df[band][t_range][d]+1.667).mean()
+                            std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std()
+                            plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                            #print(the_median)
+                            #median_list.append(the_median)
+                            self.ax.annotate(the_mean, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                        color=plotcolor[d], backgroundcolor='white',
+                                        horizontalalignment='left', verticalalignment='top')
                         i+=1
                     elif self.rel_abs_var.get()=='relative': # Relative values
                         t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
@@ -1239,19 +1270,32 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         plt.ylim(0,1.0) # relative power in any one band never seems to exceed 80%
                         print('d='+str(d))
                         self.ax.plot(self.relative_df[band].index[t_range], self.relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
-                        # plt.hold(True)
-                        median_val = self.relative_df[band][t_range][d].median()
-                        std_val = self.relative_df[band][t_range][d].std()
-                        plt.axhline(median_val, 0, 1, linewidth=2, color=plotcolor[d])
-                        the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
-                        #print(the_median)
-                        median_list.append(the_median)
-                        #print('median_list'+str(median_list))
-                        self.ax.annotate(median_list[i], xy=(1.01, 0.15),  xycoords='axes fraction',
-                                    xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                    color=plotcolor[d], backgroundcolor='white',
-                                    horizontalalignment='left', verticalalignment='top')
+                        if self.med_mean_var.get()=='median':
+                            median_val = self.relative_df[band][t_range][d].median()
+                            std_val = self.relative_df[band][t_range][d].std()
+                            plt.axhline(median_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                            self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                        color=plotcolor[d], backgroundcolor='white',
+                                        horizontalalignment='left', verticalalignment='top')
+                        elif self.med_mean_var.get()=='mean':
+                            mean_val = self.relative_df[band][t_range][d].mean()
+                            std_val = self.relative_df[band][t_range][d].std()
+                            plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                            #print(the_median)
+                            #median_list.append(the_median)
+                            self.ax.annotate(the_mean, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                        color=plotcolor[d], backgroundcolor='white',
+                                        horizontalalignment='left', verticalalignment='top')
                         i+=1
+                        #print('median_list'+str(median_list))
+#                        if self.med_mean_var.get()=='mean':
+#                            self.med_mean_legend(mean_list, d)
+#                        if self.med_mean_var.get()=='median':
+#                            self.med_mean_legend(median_list, d)
                 elif q in {'j', 'k'}:
                     d = str(q)
                     #print('d=',d)
@@ -1301,8 +1345,8 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+#        duration = self.sessions_df.ix[current_index]['duration']
+#        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -1314,9 +1358,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             +interval_string, fontsize = 'large')
         plt.show()
 
-        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-        lbl0.pack(side=tk.BOTTOM, fill=X)
+#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
+#        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
