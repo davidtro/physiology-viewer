@@ -594,21 +594,24 @@ class PV(ttk.Frame):
         rdo12 = ttk.Radiobutton(frm4, text='lf', variable=self.data_source_var, value='lf')
         rdo13 = ttk.Radiobutton(frm4, text='rf', variable=self.data_source_var, value='rf')
         rdo14 = ttk.Radiobutton(frm4, text='rb', variable=self.data_source_var, value='rb')
+        """ # Disable controls for left/right, front/back and mean averages until implementation later
         rdo15 = ttk.Radiobutton(frm4, text='left', variable=self.data_source_var, value='left')
         rdo16 = ttk.Radiobutton(frm4, text='right', variable=self.data_source_var, value='right')
         rdo17 = ttk.Radiobutton(frm4, text='front', variable=self.data_source_var, value='front')
         rdo18 = ttk.Radiobutton(frm4, text='back', variable=self.data_source_var, value='back')
         rdo19 = ttk.Radiobutton(frm4, text='mean', variable=self.data_source_var, value='mean')
-
+        """
         rdo11.grid(row=2, column=0, sticky=E)
         rdo12.grid(row=0, column=0, sticky=E)
         rdo13.grid(row=0, column=2, sticky=W)
         rdo14.grid(row=2, column=2, sticky=W)
+        """ # Disable until future implementation
         rdo15.grid(row=3, column=0, sticky=E)
         rdo16.grid(row=3, column=2, sticky=W)
         rdo17.grid(row=0, column=3, sticky=E)
         rdo18.grid(row=2, column=3, sticky=E)
         rdo19.grid(row=3, column=3, sticky=E)
+        """
 
         frm411 = ttk.Frame(frm4, borderwidth=2, width=20) # frame for head graphic,...
         frm411.grid(row=1, column=1)
@@ -657,7 +660,8 @@ class PV(ttk.Frame):
         self.widUser = {chk8, chk9, chk10, chk11}
         self.widRelAbs = {rdo20, rdo21}
         self.widMedMean = {rdo22, rdo23}
-        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
+        self.widSrc = {rdo11, rdo12, rdo13, rdo14}
+#        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
         self.widBreath = chk6
         self.widHeart = chk7
 
