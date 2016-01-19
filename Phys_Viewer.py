@@ -264,7 +264,6 @@ class PV(ttk.Frame):
         self.sample_rate_var = IntVar()
         self.rel_abs_var = StringVar()
         self.med_mean_var = StringVar()
-        self.tv = StringVar()  # Value of text entry box for graph commands
         self.type_average_var = StringVar() # type of average (mean, median, std, meanstd) in tables
     
         self.interval = IntVar() # integer variable for keeping track 
@@ -288,6 +287,7 @@ class PV(ttk.Frame):
 #        self.interval_int.set(0)
         self.int_value = self.interval.set(0)
         self.graph_type_var.set('timeseries') # initialize graph_type radio button
+        self.data_type_var['a'].set(1) #initialize data_type_var so that 'a' is selected
         self.data_source_var.set('lb') # initialize data_source as 'lb'
         self.type_average_var.set('mean') # initialize for type of table
         
@@ -300,16 +300,13 @@ class PV(ttk.Frame):
         self.v_offset_var.set(0.0)
         self.v_scale_var.set(1.0)
         
-        self.tv.set('a&b')
-#        self.absolute_check_value.set(0)
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
         self.pack(expand=Y, fill=BOTH)
         self.master.title('Physiology Viewer')
         self.load_session_data()
         self._create_viewer_panel()
-                
-         
+                         
     def load_session_data(self):
         """
         IMPORTANT: Currently data are stored in a hard-wired directory, C:\MedRec
@@ -538,10 +535,7 @@ class PV(ttk.Frame):
         rdo4.grid(row=9, column=0, sticky=W)
         rdo5.grid(row=10, column=0, sticky=W)
         rdo6.grid(row=11, column=0, sticky=W)
-        # Text entry box for time series graph commands        
-        #etr = ttk.Entry(self.frame, width = 20, textvariable=self.tv)
-        #etr.grid(row=5, column=1, sticky=W)
-        #etr.bind("<Return>", lambda x : self.get_graphs(self.tv.get()))
+
         frm1 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for containing checkboxes d,t,a,b,g,...
         frm1.grid(row=5, column=1, sticky=W)
         chk1 = ttk.Checkbutton(frm1, text='d ', variable=self.data_type_var['d'])
@@ -667,6 +661,8 @@ class PV(ttk.Frame):
 #        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
         self.widBreath = chk6
         self.widHeart = chk7
+
+        update_session_data(self) # Causes update even when do combobox selection has been made
 
                 
     def disable_widget(self, widset):
@@ -1224,8 +1220,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         fourthirds = 4/3.0  #To undo the 0.75 factor of c and m values (set8)
                             #introduced in EEG-open-21.py when converting CSV to h5
             
-        median_list = []
-        mean_list = []
         graph_title = ''
         i=0
 
