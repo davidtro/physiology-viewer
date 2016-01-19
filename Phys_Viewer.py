@@ -618,7 +618,10 @@ class PV(ttk.Frame):
         
         can = Canvas(frm411, width=55, height=55)
         can.grid()
-        can.create_oval(2,2, 50, 50, fill="red")
+        can.create_oval(5, 7, 50, 52, fill="blanched almond") # scalp
+        can.create_oval(2, 20, 6, 35, fill="blanched almond") # left ear
+        can.create_oval(49, 20, 53, 35, fill="blanched almond") # right ear
+        can.create_polygon(23, 7, 27.5, 2, 32, 7, fill="blanched almond", outline="black") # nose
 
         frm2 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for Intervals, t_initial, t_final
         frm2.grid(row=12, column=0, columnspan=3, sticky=W)
