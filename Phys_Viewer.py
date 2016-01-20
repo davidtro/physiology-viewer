@@ -13,7 +13,7 @@ http://still-breathing.net/software/
 """
 
 import tkinter as tk
-from tkinter import BOTH, TOP, X, Y, N, S, E, W, END
+from tkinter import BOTH, TOP, Y, N, S, E, W, END
 from tkinter import ttk, Canvas, Frame, Text, IntVar, StringVar, DoubleVar
 import numpy as np
 import pandas as pd
@@ -440,6 +440,7 @@ class PV(ttk.Frame):
             print(notes)
             
         def update_widgets():
+            print('in update_widgets')
             graph = self.graph_type_var.get()
             if self.eeg_check_value.get(): # EEG data exists
                 if graph == 'timeseries':
@@ -459,22 +460,25 @@ class PV(ttk.Frame):
                 elif graph == 'table':
                     self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
                     self.enable_widget(self.widRelAbs)
-            else:
-                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
+            else: # EEG data does not exist
+                self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
+                self.uncheck_data_source_widgets(['d', 't', 'a', 'b', 'g', 'c', 'm', 'j', 'k']) # EEG bands do not apply
             if self.heart_check_value.get(): # heart data exists
                 if graph == 'timeseries':
                     self.widHeart.configure(state='normal')
                 else:
                     self.widHeart.configure(state='disabled')
-            else:
+            else: # heart data does not exist
                 self.widHeart.configure(state='disabled')
+                self.uncheck_data_source_widgets(['v']) # EEG bands do not apply
             if self.breath_check_value.get(): # breath data exists
                 if graph == 'timeseries':
                     self.widBreath.configure(state='normal')
                 else:
                     self.widBreath.configure(state='disabled')
-            else:
+            else: # breath data does not exist
                 self.widBreath.configure(state='disabled')
+                self.uncheck_data_source_widgets(['p']) # EEG bands do not apply
                     
                 
         def update_labels():
@@ -663,6 +667,14 @@ class PV(ttk.Frame):
         self.widHeart = chk7
 
         update_session_data(self) # Causes update even when do combobox selection has been made
+        
+    def uncheck_data_source_widgets(self, srclist):
+        """
+        When EEG, heart or breath data do not exist, uncheck corresponding data source checkboxes
+        (to prevent draw_graph routine from trying to plot missing data)
+        """
+        for x in srclist:
+            self.data_type_var[x].set(0)
 
                 
     def disable_widget(self, widset):
@@ -685,7 +697,7 @@ class PV(ttk.Frame):
         
     def draw_spectrogram(self):
         popup = tk.Tk()
-        popup.geometry('700x500') # Set dimensions of popup window to 800x500 pixels
+        popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Physiology graph")
         p = plt.figure()
         self.ax = plt.subplot(111)
@@ -712,15 +724,13 @@ class PV(ttk.Frame):
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
         signal = self.raw_df[r][i_range]
         Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
-        cb = p.colorbar(im, shrink=0.9, pad=0.02)
-        cb.set_label('Intensity (dB)')
-        
         plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
         plt.xlim(ti, tf)
 
-        box = self.ax.get_position()
-        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
-
+#        cb = p.colorbar(im, shrink=0.9, pad=0.02)
+        cb = p.colorbar(im, shrink=0.9, pad=0.02)
+        cb.set_label('Intensity (dB)')
+        
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
@@ -735,6 +745,12 @@ class PV(ttk.Frame):
         plt.title(graph_title+'\n'\
             +recording+' ('+subject+') '+title+'\n'\
             +interval_string, fontsize = 'large')
+
+        box = self.ax.get_position()
+#        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
+#        self.ax.set_position([box.x0, box.y0-0.04, box.width, box.height*0.95])
+        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.95])
+
         plt.show()
 
 #        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
@@ -756,7 +772,7 @@ class PV(ttk.Frame):
 
     def draw_psd(self):
         popup = tk.Tk()
-        popup.geometry('800x500') # Set dimensions of popup window to 800x500 pixels
+        popup.geometry('720x480') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Power Spectral Density")
         p = plt.figure()
         self.ax = plt.subplot(111)
@@ -837,6 +853,7 @@ class PV(ttk.Frame):
     
     def draw_raw_eeg(self):
         popup = tk.Tk()
+        popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Raw EEG")
         p = plt.figure()
         self.ax = plt.subplot(111)
@@ -1222,6 +1239,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         #print('current_index = '+str(current_index))
     
         popup = tk.Tk()
+        popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Physiology graph")
         p = plt.figure()
         self.ax = plt.subplot(111)
