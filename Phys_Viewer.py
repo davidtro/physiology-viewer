@@ -13,7 +13,7 @@ http://still-breathing.net/software/
 """
 
 import tkinter as tk
-from tkinter import BOTH, TOP, X, Y, N, E, W, NW, LEFT, END
+from tkinter import BOTH, TOP, X, Y, N, S, E, W, END
 from tkinter import ttk, Canvas, Frame, Text, IntVar, StringVar, DoubleVar
 import numpy as np
 import pandas as pd
@@ -511,16 +511,16 @@ class PV(ttk.Frame):
         self.txt1 = Text(self.frame, height=10, wrap=tk.WORD)
         notes = self.sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
-        self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=W)
+        self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=(N,S,E,W))
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
 
         lbl1 = ttk.Label(self.frame, textvariable=self.eeg_label, width=15)
-        lbl1.grid(row=2, column=4, sticky=NW)
+        lbl1.grid(row=2, column=4, sticky=(N,W))
         lbl2 = ttk.Label(self.frame, textvariable=self.heart_label, width=15)
-        lbl2.grid(row=3, column=4, sticky=NW)
+        lbl2.grid(row=3, column=4, sticky=(N,W))
         lbl3 = ttk.Label(self.frame, textvariable=self.breath_label, width=15)
-        lbl3.grid(row=4, column=4, sticky=NW)
+        lbl3.grid(row=4, column=4, sticky=(N,W))
 
         rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: update_widgets())
         rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: update_widgets())
@@ -608,7 +608,7 @@ class PV(ttk.Frame):
         """
 
         frm411 = ttk.Frame(frm4, borderwidth=2, width=20) # frame for head graphic,...
-        frm411.grid(row=1, column=1)
+        frm411.grid(row=1, column=1, sticky=(N,S,E,W))
         
         can = Canvas(frm411, width=55, height=55)
         can.grid()
@@ -685,6 +685,7 @@ class PV(ttk.Frame):
         
     def draw_spectrogram(self):
         popup = tk.Tk()
+        popup.geometry('700x500') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Physiology graph")
         p = plt.figure()
         self.ax = plt.subplot(111)
@@ -711,6 +712,9 @@ class PV(ttk.Frame):
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
         signal = self.raw_df[r][i_range]
         Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
+        cb = p.colorbar(im, shrink=0.9, pad=0.02)
+        cb.set_label('Intensity (dB)')
+        
         plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
         plt.xlim(ti, tf)
 
@@ -752,6 +756,7 @@ class PV(ttk.Frame):
 
     def draw_psd(self):
         popup = tk.Tk()
+        popup.geometry('800x500') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Power Spectral Density")
         p = plt.figure()
         self.ax = plt.subplot(111)
@@ -764,7 +769,7 @@ class PV(ttk.Frame):
         tf = float(self.sva[int_value][2].get())
 
         box = self.ax.get_position()
-        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
+        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.95])
 
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
@@ -783,9 +788,20 @@ class PV(ttk.Frame):
         f = int(tf*self.fs)
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
         signal = self.raw_df[d][i_range]
-        Pxx, freqs = plt.psd(signal, NFFT=1024, noverlap=512, Fs=220)
+        Pxx, freqs = plt.psd(signal, NFFT=1024, noverlap=512, Fs=220, color="black")
         self.ax.set_yscale('log')
         self.ax.set_xscale('linear')
+        """
+        axpos = self.ax.get_position()
+        axx0 = axpos.x0 # left of ax
+        axy0 = axpos.y0 # bottom of ax
+        axwidth = axpos.width # width of ax
+        axheight = axpos.height # height of ax
+        print('x0=',axx0)
+        print('y0=',axy0) # bottom
+        print('width=',axwidth)
+        print('height=',axheight)
+        """
         plt.xlabel('Frequency (Hz)')
         plt.xlim(XMIN, XMAX)
         plt.ylim(YMIN, YMAX)
