@@ -13,8 +13,9 @@ http://still-breathing.net/software/
 """
 
 import tkinter as tk
-from tkinter import BOTH, TOP, Y, N, S, E, W, END
+from tkinter import BOTH, TOP, LEFT, X, Y, N, S, E, W, END
 from tkinter import ttk, Canvas, Frame, Text, IntVar, StringVar, DoubleVar
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -230,9 +231,12 @@ class PV(ttk.Frame):
 
     def __init__(self, name='phys_viewer'):
         ttk.Frame.__init__(self, name=name)
+        
+#        self.customFont = tk.Font(family="Helvetica", size=14)
         self.index_var = IntVar()
         self.recording_var = StringVar()
-        self.title_var = StringVar()
+        self.title_var = StringVar() # Used in cbx1 combo box
+        self.session_title_var = StringVar() # Used in label lbl0
         self.person_var = StringVar()
         self.subject_var = StringVar()
         self.date_time_var = StringVar()
@@ -355,6 +359,7 @@ class PV(ttk.Frame):
             #print('current_index = '+str(current_index))
             self.index_var.set(current_index)
             self.recording_var.set(self.sessions_df.ix[current_index]['recording'])
+            self.session_title_var.set(self.sessions_df.ix[current_index]['title'])
             self.person_var.set(self.sessions_df.ix[current_index]['person'])
             self.subject_var.set(self.sessions_df.ix[current_index]['subject'])
             self.date_time_var.set(self.sessions_df.ix[current_index]['date_time'])
@@ -440,7 +445,7 @@ class PV(ttk.Frame):
             print(notes)
             
         def update_widgets():
-            print('in update_widgets')
+#            print('in update_widgets')
             graph = self.graph_type_var.get()
             if self.eeg_check_value.get(): # EEG data exists
                 if graph == 'timeseries':
@@ -501,7 +506,7 @@ class PV(ttk.Frame):
         # frame to hold contentx
         self.frame = ttk.Frame(nb, height='10i', width='8i', name='main')
         # widgets to be displayed on 'Session' tab
-        lbl0 = ttk.Label(self.frame, text='Session title goes here', width=40)    
+        lbl0 = ttk.Label(self.frame, textvariable=self.session_title_var, width=40, font=("Helvetica", 16))    
         lbl0.grid(row=0, column=0, columnspan=3, sticky=N)
 
         self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
@@ -698,7 +703,7 @@ class PV(ttk.Frame):
     def draw_spectrogram(self):
         popup = tk.Tk()
         popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
-        popup.wm_title("Physiology graph")
+        popup.wm_title("Spectrogram")
         p = plt.figure()
         self.ax = plt.subplot(111)
         # In preparation for plotting, get the current radiobutton selection and the 
@@ -734,8 +739,8 @@ class PV(ttk.Frame):
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-#        duration = self.sessions_df.ix[current_index]['duration']
-#        date_time = self.sessions_df.ix[current_index]['date_time']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -753,9 +758,9 @@ class PV(ttk.Frame):
 
         plt.show()
 
-#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-#        lbl0.pack(side=tk.BOTTOM, fill=X)
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -790,8 +795,8 @@ class PV(ttk.Frame):
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-#        duration = self.sessions_df.ix[current_index]['duration']
-#        date_time = self.sessions_df.ix[current_index]['date_time']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -834,9 +839,9 @@ class PV(ttk.Frame):
             +interval_string, fontsize = 'large')
         plt.show()
 
-#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-#        lbl0.pack(side=tk.BOTTOM, fill=X)
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -871,8 +876,8 @@ class PV(ttk.Frame):
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-#        duration = self.sessions_df.ix[current_index]['duration']
-#        date_time = self.sessions_df.ix[current_index]['date_time']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -893,9 +898,9 @@ class PV(ttk.Frame):
             +interval_string, fontsize = 'large')
         plt.show()
 
-#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-#        lbl0.pack(side=tk.BOTTOM, fill=X)
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
@@ -936,7 +941,7 @@ class PV(ttk.Frame):
 #        print('ti='+str('%.3f' % ti))
 #        print('tf='+str('%.3f' % tf))
         if self.rel_abs_var.get()=='absolute': # Absolute values
-            popup.wm_title("Radar Chart of Mean Absolute EEG values")
+            popup.wm_title("Radar Chart")
 #            graph_title = 'EEG Inverse Log of Mean Absolute Band Power'
             graph_title = 'EEG of Mean Absolute Band Power'
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
@@ -953,7 +958,7 @@ class PV(ttk.Frame):
                 values_array.append(values_list)
                 values_list = []
         elif self.rel_abs_var.get()=='relative': # Relative values
-            popup.wm_title("Radar Chart of Median Relative EEG values")
+            popup.wm_title("Radar Charts")
             graph_title = 'EEG Median Relative Band Power'
             t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
 #            print('t_range for relative')
@@ -963,8 +968,8 @@ class PV(ttk.Frame):
             for i in range(len(freqbands)):
                 for j in range(len(locations[i])-1, 0, -1): # omit average value; step down for proper radar display
                     values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].median())
-                    print('relative values_list')
-                    print(values_list)
+#                    print('relative values_list')
+#                    print(values_list)
                 values_array.append(values_list)
                 values_list = []
         data = values_array
@@ -1075,7 +1080,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         popup = tk.Tk()
         grph = self.type_average_var.get()
         if self.rel_abs_var.get()=='absolute': # Display absolute values normalized to range [0:100] in table
-            popup.wm_title("Average Absolute EEG values")
+            popup.wm_title("Table of EEG values")
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
             if grph == 'meanstd': # columns are delta, d-std, theta, t-std, alpha, a-std, beta, b-std, gamma, gstd 
                                    # rows are lb, lf, rf, rb
@@ -1133,7 +1138,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         values = values + str('%.1f' % x) + ' '
                     values = values + '\n'
         elif self.rel_abs_var.get()=='relative': # Display relative values in table
-            popup.wm_title("Average Relative EEG values")
+            popup.wm_title("Table of EEG values")
             t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
             if grph == 'meanstd': # columns are delta, d-std, theta, t-std, alpha, a-std, beta, b-std, gamma, gstd 
                                    # rows are lb, lf, rf, rb
@@ -1240,7 +1245,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
     
         popup = tk.Tk()
         popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
-        popup.wm_title("Physiology graph")
+        popup.wm_title("Time Series graph")
         p = plt.figure()
         self.ax = plt.subplot(111)
         # In preparation for plotting, get the current radiobutton selection and the 
@@ -1258,6 +1263,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         i=0
 
         item_list = list(self.data_type_var.items())
+        mean_list = []
         for pair in item_list:
             if pair[1].get(): # if the corresponding checkbox is checked
                 q = pair[0] # assign q to d, t, a, b, g, p, v, c, m, j, k
@@ -1380,8 +1386,8 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
         subject = self.sessions_df.ix[current_index]['subject']
-#        duration = self.sessions_df.ix[current_index]['duration']
-#        date_time = self.sessions_df.ix[current_index]['date_time']
+        duration = self.sessions_df.ix[current_index]['duration']
+        date_time = self.sessions_df.ix[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -1393,9 +1399,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             +interval_string, fontsize = 'large')
         plt.show()
 
-#        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
-#        text=recording+' recorded '+str(date_time)+' at ('+str('%.0f' % duration)+' s'+')')
-#        lbl0.pack(side=tk.BOTTOM, fill=X)
+        lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
+        text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
+        lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
         canvas.show()
