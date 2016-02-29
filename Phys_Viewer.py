@@ -14,12 +14,14 @@ http://still-breathing.net/software/
 
 import tkinter as tk
 from tkinter import BOTH, TOP, LEFT, X, Y, N, S, E, W, END
-from tkinter import ttk, Canvas, Frame, Text, IntVar, StringVar, DoubleVar
+from tkinter import ttk, Canvas, Frame, Toplevel, Text, IntVar, StringVar, DoubleVar
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.mlab as m
 import matplotlib.patches as patches
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.path import Path
 from matplotlib.spines import Spine
@@ -84,13 +86,56 @@ YMIN = 0.1 # minimum PSD value
 YMAX = 100 # maximum PSD value
 lblY = YMAX - 30
 
-band_patches = [
-    patches.Rectangle((XMIN, YMIN), 4, YMAX, facecolor="blue", alpha=0.2),
-    patches.Rectangle((4, YMIN), 4, YMAX, facecolor="cyan", alpha=0.2),
-    patches.Rectangle((8, YMIN), 4, YMAX, facecolor="green", alpha=0.2),
-    patches.Rectangle((12, YMIN), 18, YMAX, facecolor="orange", alpha=0.2),
-    patches.Rectangle((30, YMIN), XMAX-30, YMAX, facecolor="magenta", alpha=0.2),
-]
+class WinPsd(Toplevel):
+    def __init__(self, master, cnf={}, **kw):
+        Toplevel.__init__(self, master, **kw)
+        self._create_plot()
+
+    def _create_plot(self):
+        self.fig = Figure()
+        self.ax = self.fig.add_subplot(111)
+
+        ax = self.ax
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width, box.height*0.95])
+
+        ax.set_yscale('log')
+        ax.set_xscale('linear')
+
+        ax.set_xlabel('Frequency (Hz)')
+        ax.set_xlim(XMIN, XMAX)
+        ax.set_ylim(YMIN, YMAX)
+
+        band_patches = [
+            patches.Rectangle((XMIN, YMIN), 4, YMAX, facecolor="blue", alpha=0.2),
+            patches.Rectangle((4, YMIN), 4, YMAX, facecolor="cyan", alpha=0.2),
+            patches.Rectangle((8, YMIN), 4, YMAX, facecolor="green", alpha=0.2),
+            patches.Rectangle((12, YMIN), 18, YMAX, facecolor="orange", alpha=0.2),
+            patches.Rectangle((30, YMIN), XMAX-30, YMAX, facecolor="magenta", alpha=0.2)]
+
+        for ptch in band_patches:
+            ax.add_patch(ptch)
+        ax.annotate('delta', xy=(2,lblY), fontsize=10, color=None, horizontalalignment='center')
+        ax.annotate('theta', xy=(6,lblY), fontsize=10, color=None, horizontalalignment='center')
+        ax.annotate('alpha', xy=(10,lblY), fontsize=10, color=None, horizontalalignment='center')
+        ax.annotate('beta', xy=(21,lblY), fontsize=10, color=None, horizontalalignment='center')
+        ax.annotate('gamma', xy=(42,lblY), fontsize=10, color=None, horizontalalignment='center')
+
+        xdata,ydata = [],[]
+        self.line, = ax.plot(xdata, ydata)
+
+        canvas = FigureCanvasTkAgg(self.fig, master=self)
+
+        toolbar = NavigationToolbar2TkAgg(canvas, self)
+        toolbar.update()
+        canvas._tkcanvas.pack(fill='both', expand=1)
+        canvas.show()
+
+    def draw(self, xdata, ydata):
+        self.line.set_xdata(xdata)
+        self.line.set_ydata(ydata)
+        self.fig.canvas.draw()
+    
 
 """
     d~delta, t~theta, a~alpha, b~beta, g~gamma
@@ -223,15 +268,15 @@ def unit_poly_verts(theta):
     verts = [(r*np.cos(t) + x0, r*np.sin(t) + y0) for t in theta]
     return verts
 
-class PV(ttk.Frame):
+class PV(tk.Tk):
      
     Labels = ['Interval', 'ti', 'tf']
     LabelObject = []
     EntryObject = []
 
-    def __init__(self, name='phys_viewer'):
-        ttk.Frame.__init__(self, name=name)
-        
+    def __init__(self, name='Physiology Viewer', **kw):
+        tk.Tk.__init__(self, **kw)
+        self.title(name)
 #        self.customFont = tk.Font(family="Helvetica", size=14)
         self.index_var = IntVar()
         self.recording_var = StringVar()
@@ -306,8 +351,8 @@ class PV(ttk.Frame):
         
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
-        self.pack(expand=Y, fill=BOTH)
-        self.master.title('Physiology Viewer')
+#        self.pack(expand=Y, fill=BOTH) # NECESSARY??
+#        self.master.title('Physiology Viewer') # NECESSARY??
         self.load_session_data()
         self._create_viewer_panel()
                          
@@ -437,8 +482,10 @@ class PV(ttk.Frame):
                 self.cardio_df = (pd.read_hdf(self.path+recording+'_cardio.h5', 'cardio_data') + 1.0)/8.0 + 0.5
             if str(self.sessions_df['bth'][index]) == '1':
                 #print('reading respiration data')
-                # Try to normalize breath values to minimize overlap with heart and eeg
-                self.resp_df = (pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)
+                # Try to normalize breath values to minimize overlap with heart and eeg (by subtracting 103)
+                # p' = (42.9)*p - 58.6 so that breath can be plotted with gamma absolute on same graph
+                self.resp_df = ((pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)*42.9-58.6) # for rec33
+#                self.resp_df = ((pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)*20) # for rec122
     
         def update_notes(notes):
             self.sessions_df.set(current_index, 'notes', notes)
@@ -672,6 +719,13 @@ class PV(ttk.Frame):
         self.widHeart = chk7
 
         update_session_data(self) # Causes update even when do combobox selection has been made
+    """        
+    def show_psd(self):
+        xdata,ydata = [range(50)],[range(50)] #get some data from somewhere
+        popup = WinPsd(self)
+        popup.wm_title("Power Spectral Density")
+        popup.draw(xdata, ydata)
+    """
         
     def uncheck_data_source_widgets(self, srclist):
         """
@@ -776,11 +830,9 @@ class PV(ttk.Frame):
         return None
 
     def draw_psd(self):
-        popup = tk.Tk()
+        popup = WinPsd(self)
         popup.geometry('720x480') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Power Spectral Density")
-        p = plt.figure()
-        self.ax = plt.subplot(111)
         # In preparation for plotting, get the current radiobutton selection and the 
         # corresponding initial and final times of the interval        
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
@@ -788,9 +840,6 @@ class PV(ttk.Frame):
         
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
-
-        box = self.ax.get_position()
-        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.95])
 
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
@@ -809,53 +858,27 @@ class PV(ttk.Frame):
         f = int(tf*self.fs)
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
         signal = self.raw_df[d][i_range]
-        Pxx, freqs = plt.psd(signal, NFFT=1024, noverlap=512, Fs=220, color="black")
-        self.ax.set_yscale('log')
-        self.ax.set_xscale('linear')
-        """
-        axpos = self.ax.get_position()
-        axx0 = axpos.x0 # left of ax
-        axy0 = axpos.y0 # bottom of ax
-        axwidth = axpos.width # width of ax
-        axheight = axpos.height # height of ax
-        print('x0=',axx0)
-        print('y0=',axy0) # bottom
-        print('width=',axwidth)
-        print('height=',axheight)
-        """
-        plt.xlabel('Frequency (Hz)')
-        plt.xlim(XMIN, XMAX)
-        plt.ylim(YMIN, YMAX)
-        for ptch in band_patches:
-            self.ax.add_patch(ptch)
-        self.ax.annotate('delta', xy=(2,lblY), fontsize=10, color=None, horizontalalignment='center')
-        self.ax.annotate('theta', xy=(6,lblY), fontsize=10, color=None, horizontalalignment='center')
-        self.ax.annotate('alpha', xy=(10,lblY), fontsize=10, color=None, horizontalalignment='center')
-        self.ax.annotate('beta', xy=(21,lblY), fontsize=10, color=None, horizontalalignment='center')
-        self.ax.annotate('gamma', xy=(42,lblY), fontsize=10, color=None, horizontalalignment='center')
+        
+#        xdata,ydata = [range(50)],[range(50)] #get some data from somewhere
+#        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220, color="black")
+#        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
+        ydata, xdata = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
+        
+        popup.draw(xdata, ydata)
 
         plt.title(graph_title+'\n'\
             +recording+' ('+subject+') '+title+'\n'\
             +interval_string, fontsize = 'large')
         plt.show()
-
+        
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
         lbl0.pack(side=tk.BOTTOM, fill=X)
         
-        canvas = FigureCanvasTkAgg(p, master=popup)
-        canvas.show()
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
+
         
-        toolbar = NavigationToolbar2TkAgg(canvas, popup)
-        toolbar.update()
-        canvas._tkcanvas.pack(side=tk.TOP, expand=1)
-        
-        popup.mainloop()
-        return None
-    
     def draw_raw_eeg(self):
         popup = tk.Tk()
         popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
@@ -1276,9 +1299,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                 
                     if self.rel_abs_var.get()=='absolute': # Absolute values
                         t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
-                        graph_title = 'EEG of Absolute Power'
+                        graph_title = 'EEG Absolute Power'
                         plt.xlabel('time (s)')
-                        plt.ylabel('absolute power')
+                        plt.ylabel('absolute power (Bels)')
                         plt.ylim(0,100)
                         # The factor 30 and shift 1.667 are chosen empirically so that range of absolute power values are withing range 0 - 100
                         self.ax.plot(self.absolute_df[band].index[t_range], 30*(self.absolute_df[band][t_range][d]+1.667), color=plotcolor[d], label=plotlabel[d])
@@ -1307,7 +1330,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
                         graph_title = 'EEG Relative Power'
                         plt.xlabel('time (s)')
-                        plt.ylabel('relative power')
+                        plt.ylabel('relative power (fraction)')
                         plt.ylim(0,1.0) # relative power in any one band never seems to exceed 80%
                         print('d='+str(d))
                         self.ax.plot(self.relative_df[band].index[t_range], self.relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
@@ -1456,6 +1479,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             self.draw_spectrogram()
         elif graph_type == 'psd':
             self.draw_psd()
+#            self.show_psd()
         elif graph_type == 'raweeg':
             self.draw_raw_eeg()
         elif graph_type == 'radar':
