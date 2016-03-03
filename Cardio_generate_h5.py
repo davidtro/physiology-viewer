@@ -12,8 +12,6 @@ import scipy as sp
 from pandas import DataFrame
 import pandas as pd
 
-session = input('TXT filename (without extension): ')
-
 def load_data(dataName):
     """
     Attempts to open tab-delimited text file for session data.
@@ -31,77 +29,54 @@ def load_data(dataName):
     tt_arr for timestamps corresponding to breath pressures
     
     """
-    filepath = 'C:/MuseRec/'
-    fullfilename = filepath+dataName+'.txt'
 
-    data = np.loadtxt(fullfilename, skiprows=7, usecols=(0,1,2))
+    global data, ncols
+    data = np.loadtxt(dataName, skiprows=7)
+    nsamps, ncols = data.shape
+    print('ncols=',ncols)
+    #print('example p data: ', data[2])
     
-    global t, v, p, tt, pp, ts, v_data, p_data, v_df, p_df
+    global t, v, p, s, tt, pp, ts, v_data, p_data, s_data, v_df, p_df, s_df
     
     t = [row[0] for row in data] # first column contains time-stamps of sample 
     v = [row[1] for row in data] # second column contains EKG voltage (mv)
     p = [row[2] for row in data] # third column contains breath pressure (kPa)
-                                 # a fourth columns contains voltages from
-                                 # button-press probe and can be ignored
     
     t_arr = np.array(t) # convert lists to np arrays
     v_arr = np.array(v)
+    p_arr = np.array(p)
 
-    # For the pressure array, let's use 20 samples/s rather than 200
-    # (or 10 samples/s rather than 100 for files created at 100 Hz)
-    # In tt array, keep only every 10th value (every 1/20th second)
-    #tt = t[:-1:10] # Down-sample sample times
-    
-#    tt_arr = np.array(tt) # convert list to np array
-    tt_arr = np.array(t) # convert list to np array
-    # similarly for pressure values
-    #p2 = p[:-1:10] # Ensure that the p2 array corresponds to the tt array
-            
-    # Filter breath signal using FFT    
-    #fft = sp.fft(p2)
-    fft = sp.fft(p)
-    bpp2 = fft[:]
-    # Filter all frequencies > 1000 (determined empirically)
-    for i in range(len(bpp2)):
-#        if i >= 1000:bpp2[i] = 0 # appropriate for 220 Hz
-        if i >= 100:bpp2[i] = 0 # appropriate for 11Hz
-    # Do inverse FFT to recover filtered respiration signal
-#        pp = sp.ifft(bpp2)
-    pp = sp.ifft(bpp2).real
-    
-    pp_arr = np.array(pp) # convert list to np array
-    # Return filtered signal, etc.
-    
-    
-    return dataName, t_arr, v_arr, tt_arr, pp_arr
+    if ncols>3:
+        s = [row[3] for row in data] # a fourth column button-press currents
+        s_arr = np.array(s)
+        return dataName, t_arr, v_arr, p_arr, s_arr
+    else:
+        return dataName, t_arr, v_arr, p_arr
 
+#    return dataName, t_arr, v_arr, t_arr, p_arr, t_arr, s_arr
+    
 def save_data(cr_data):
     v_data = {'time': cr_data[1], 'mv': cr_data[2]}
     v_df = DataFrame(v_data, index = cr_data[1], columns = ['mv'])
     v_df.index.name = 'time'
     v_df.columns.name = 'v'
     
-    p_data = {'time': cr_data[3], 'kPa': cr_data[4]}
-    p_df = DataFrame(p_data, index = cr_data[3], columns = ['kPa'])
+    p_data = {'time': cr_data[1], 'kPa': cr_data[3]}
+    p_df = DataFrame(p_data, index = cr_data[1], columns = ['kPa'])
     p_df.index.name = 'time'
     p_df.columns.name = 'p'
     
-    """
-    v_data = {'time': t_arr, 'mv': v_arr}
-    v_df = DataFrame(v_data, index = t_arr, columns = ['mv'])
-    v_df.index.name = 'time'
-    v_df.columns.name = 'v'
+    if ncols>3:
+        s_data = {'time': cr_data[1], 'ma': cr_data[4]}
+        s_df = DataFrame(s_data, index = cr_data[1], columns = ['ma'])
+        s_df.index.name = 'time'
+        s_df.columns.name = 's'
     
-    p_data = {'time': tt_arr, 'kPa': pp_arr}
-    p_df = DataFrame(p_data, index = tt_arr, columns = ['kPa'])
-    p_df.index.name = 'time'
-    p_df.columns.name = 'p'
-    """
     global session
     session = session[3:6] # Retain only the digits after 'lab' in 'lab##'
     session = 'rec' + session # New string is 'rec##'
     print(session)
-    global v_store, p_store
+    global v_store, p_store, s_store
     v_store = pd.HDFStore(session+'_cardio.h5')
     v_store['cardio_data'] = v_df
     v_store.close() # This is important!
@@ -110,5 +85,13 @@ def save_data(cr_data):
     p_store['resp_data'] = p_df
     p_store.close() # This is important!
 
-cr_data = load_data(session)
-save_data(cr_data)
+    if ncols>3:
+        s_store = pd.HDFStore(session+'_button.h5')
+        s_store['btn_data'] = s_df
+        s_store.close() # This is important!
+
+filepath = 'C:/MuseRec/'
+session = input('TXT filename (without extension): ')
+fullfilename = filepath+session+'.txt'
+
+save_data(load_data(fullfilename))

@@ -38,19 +38,21 @@ graphs = {'d': 'delta',
           'a': 'alpha', 
           'b': 'beta', 
           'g': 'gamma',
-          'k': 'blink', 
-          'j': 'jaw clench', 
           'c': 'concentration', 
+          'p': 'breath',
+          'v': 'heart',
+          's': 'button press',
+          'j': 'jaw clench', 
+          'k': 'blink', 
           'm': 'mellow', 
-          'v': 'heart', 
-          'p': 'breath'}
+          }
         
 plotlabel = {'d_m':'delta', 'dlb':'delta lb', 'dlf':'delta lf', 'drf':'delta rf', 'drb':'delta rb',
         't_m':'theta', 'tlb':'theta lb', 'tlf':'theta lf', 'trf':'theta rf', 'trb':'theta rb',
         'a_m':'alpha', 'alb':'alpha lb', 'alf':'alpha lf', 'arf':'alpha rf', 'arb':'alpha rb',
         'b_m':'beta', 'blb':'beta lb', 'blf':'beta lf', 'brf':'beta rf', 'brb':'beta rb',
         'g_m':'gamma', 'glb':'gamma lb', 'glf':'gamma lf', 'grf':'gamma rf', 'grb':'gamma rb',
-        'x':'sway', 'k':'blink', 'j':'jaw clench', 'c':'concentration', 'm':'mellow', 'v':'heart', 'p':'breath',
+        's':'button press', 'k':'blink', 'j':'jaw clench', 'c':'concentration', 'm':'mellow', 'v':'heart', 'p':'breath',
         'lb':'raw lb', 'lf':'raw lf', 'rf':'raw rf', 'rb':'raw rb',
         }
         
@@ -59,7 +61,7 @@ plotcolor = {'d_m':'blue', 'dlb':'dodgerblue', 'dlf':'royalblue', 'drf':'cornflo
         'a_m':'green', 'alb':'limegreen', 'alf':'mediumseagreen', 'arf':'springgreen', 'arb':'lightgreen',
         'b_m':'darkred', 'blb':'brown', 'blf':'sienna', 'brf':'darkgoldenrod', 'brb':'darkorange',
         'g_m':'magenta', 'glb':'mediumpurple', 'glf':'orchid', 'grf':'mediumorchid', 'grb':'plum',
-        'x':'lime', 'k':'purple', 'j':'maroon', 'c':'goldenrod', 'm':'cadetblue', 'v':'red', 'p':'skyblue',
+        's':'black', 'k':'purple', 'j':'maroon', 'c':'goldenrod', 'm':'cadetblue', 'v':'red', 'p':'skyblue',
         'lb':'deeppink', 'lf':'deeppink', 'rf':'deeppink', 'rb':'deeppink',
         }
         
@@ -77,7 +79,7 @@ a_bands = {'a_m', 'alb', 'alf','arf','arb'}
 b_bands = {'b_m', 'blb', 'blf','brf','brb'}
 g_bands = {'g_m', 'glb', 'glf','grf','grb'}
 
-cardioresp = {'v':'mv', 'p':'kPa'}
+cardioresp = {'v':'mv', 'p':'kPa', 's':'ma'}
 
 # The following is used for psd semi-log graphs only
 XMIN = 0 # minimum frequency
@@ -85,6 +87,7 @@ XMAX = 55 # maximum frequency
 YMIN = 0.1 # minimum PSD value
 YMAX = 100 # maximum PSD value
 lblY = YMAX - 30
+title_str = ''
 
 class WinPsd(Toplevel):
     def __init__(self, master, cnf={}, **kw):
@@ -103,6 +106,7 @@ class WinPsd(Toplevel):
         ax.set_xscale('linear')
 
         ax.set_xlabel('Frequency (Hz)')
+        ax.set_ylabel('Power Spectral Density (dB/Hz)')
         ax.set_xlim(XMIN, XMAX)
         ax.set_ylim(YMIN, YMAX)
 
@@ -131,11 +135,13 @@ class WinPsd(Toplevel):
         canvas._tkcanvas.pack(fill='both', expand=1)
         canvas.show()
 
-    def draw(self, xdata, ydata):
+    def draw(self, xdata, ydata, title_str):
+        self.ax.set_title(title_str)
         self.line.set_xdata(xdata)
         self.line.set_ydata(ydata)
         self.fig.canvas.draw()
-    
+        
+   
 
 """
     d~delta, t~theta, a~alpha, b~beta, g~gamma
@@ -162,6 +168,7 @@ class WinPsd(Toplevel):
     
     v ~ heart signal (EKG) in mv
     p ~ breath in kPa
+    s ~ button press in ma
     
     means ~ numerical mean values and standard deviations for each of four sensors
     medians ~ numerical median values and standard deviations for each of four sensors
@@ -289,7 +296,7 @@ class PV(tk.Tk):
 
         self.data_source_var = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
         self.data_type_var = {'d': IntVar(), 't': IntVar(), 'a': IntVar(), 'b': IntVar(), 'g': IntVar(), \
-            'p': IntVar(), 'v': IntVar(), 'c': IntVar(), 'm': IntVar(), 'j': IntVar(), 'k': IntVar()}
+            'p': IntVar(), 'v': IntVar(), 'c': IntVar(), 'm': IntVar(), 'j': IntVar(), 'k': IntVar(), 's': IntVar()}
         self.abs_offset_var = DoubleVar()
         self.abs_scale_var = DoubleVar()
         self.c_scale_var = DoubleVar()
@@ -304,12 +311,11 @@ class PV(tk.Tk):
         self.eeg_check_value = IntVar()
         self.heart_check_value = IntVar()
         self.breath_check_value = IntVar()
+        self.button_check_value = IntVar()
         self.eeg_label = StringVar()
-        self.eeg_label.set(' EEG (220 Hz)')
         self.heart_label = StringVar()
-        self.heart_label.set(' Heart (220 Hz)')
         self.breath_label = StringVar()
-        self.breath_label.set(' Breath (22 Hz)')
+        self.button_label = StringVar()
         self.sample_rate_var = IntVar()
         self.rel_abs_var = StringVar()
         self.med_mean_var = StringVar()
@@ -415,6 +421,7 @@ class PV(tk.Tk):
             self.eeg_check_value.set(self.sessions_df.ix[current_index]['eeg'])
             self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
             self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
+            self.button_check_value.set(self.sessions_df.ix[current_index]['btn'])
             self.sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
             #print('current_index=', current_index)
             #print('eeg_check_value=', self.eeg_check_value.get())
@@ -442,10 +449,10 @@ class PV(tk.Tk):
             
         def update_graph_data(index):
             """
-            Using the values of the checkboxes 'eeg', 'hrt' and 'bth',
+            Using the values of the checkboxes 'eeg', 'hrt', 'bth' and 'btn',
             reads data for session index from the corresponding .h5 file and 
-            populates the dataframes absolute_df, relative_df, user_df and raw_df, and
-            cardio_df and resp_df.
+            populates the dataframes absolute_df, relative_df, user_df and raw_df,
+            cardio_df, resp_df and button_df.
             """
             global recording, sessions_df
     #        global relative_df, user_df, raw_df, cardio_df, resp_df
@@ -464,6 +471,7 @@ class PV(tk.Tk):
             self.raw_df = None
             self.cardio_df = None
             self.resp_df = None
+            self.button_df = None
             
             # Read data from files indicated as existent by checkboxes
             if str(self.sessions_df['eeg'][index]) == '1':
@@ -486,6 +494,8 @@ class PV(tk.Tk):
                 # p' = (42.9)*p - 58.6 so that breath can be plotted with gamma absolute on same graph
                 self.resp_df = ((pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)*42.9-58.6) # for rec33
 #                self.resp_df = ((pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)*20) # for rec122
+            if str(self.sessions_df['btn'][index]) == '1':
+                self.button_df = (pd.read_hdf(self.path+recording+'_button.h5', 'btn_data') + 1.0)/8.0 + 0.5
     
         def update_notes(notes):
             self.sessions_df.set(current_index, 'notes', notes)
@@ -514,7 +524,7 @@ class PV(tk.Tk):
                     self.enable_widget(self.widRelAbs)
             else: # EEG data does not exist
                 self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
-                self.uncheck_data_source_widgets(['d', 't', 'a', 'b', 'g', 'c', 'm', 'j', 'k']) # EEG bands do not apply
+                self.uncheck_data_source_widgets(['d', 't', 'a', 'b', 'g', 'c', 'm', 'j', 'k', 's'])
             if self.heart_check_value.get(): # heart data exists
                 if graph == 'timeseries':
                     self.widHeart.configure(state='normal')
@@ -537,17 +547,21 @@ class PV(tk.Tk):
             #print('entering update_labels')
             #print('heart_check_value=', self.heart_check_value.get())
             if self.eeg_check_value.get():
-                self.eeg_label.set(' EEG (220 Hz)')
+                self.eeg_label.set(' EEG')
             else:
                 self.eeg_label.set('')
             if self.heart_check_value.get():
-                self.heart_label.set(' Heart (220 Hz)')
+                self.heart_label.set(' Heart')
             else:
                 self.heart_label.set('')
             if self.breath_check_value.get():
-                self.breath_label.set(' Breath (22 Hz)')
+                self.breath_label.set(' Breath')
             else:
                 self.breath_label.set('')
+            if self.button_check_value.get():
+                self.button_label.set(' Button')
+            else:
+                self.button_label.set('')
             #print('heart_label=',self.heart_label.get())
             
         # frame to hold contentx
@@ -567,7 +581,7 @@ class PV(tk.Tk):
         self.txt1 = Text(self.frame, height=10, wrap=tk.WORD)
         notes = self.sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
-        self.txt1.grid(row=2, column=0, rowspan=3, columnspan=4, sticky=(N,S,E,W))
+        self.txt1.grid(row=2, column=0, rowspan=4, columnspan=4, sticky=(N,S,E,W))
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
 
@@ -577,6 +591,8 @@ class PV(tk.Tk):
         lbl2.grid(row=3, column=4, sticky=(N,W))
         lbl3 = ttk.Label(self.frame, textvariable=self.breath_label, width=15)
         lbl3.grid(row=4, column=4, sticky=(N,W))
+        lbl7 = ttk.Label(self.frame, textvariable=self.button_label, width=15)
+        lbl7.grid(row=5, column=4, sticky=(N,W))
 
         rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: update_widgets())
         rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: update_widgets())
@@ -585,15 +601,15 @@ class PV(tk.Tk):
         rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: update_widgets())
         rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: update_widgets())
 
-        rdo1.grid(row=5, column=0, sticky=W)
-        rdo2.grid(row=7, column=0, sticky=W)
-        rdo3.grid(row=8, column=0, sticky=W)
-        rdo4.grid(row=9, column=0, sticky=W)
-        rdo5.grid(row=10, column=0, sticky=W)
-        rdo6.grid(row=11, column=0, sticky=W)
+        rdo1.grid(row=6, column=0, sticky=W)
+        rdo2.grid(row=8, column=0, sticky=W)
+        rdo3.grid(row=9, column=0, sticky=W)
+        rdo4.grid(row=10, column=0, sticky=W)
+        rdo5.grid(row=11, column=0, sticky=W)
+        rdo6.grid(row=12, column=0, sticky=W)
 
         frm1 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for containing checkboxes d,t,a,b,g,...
-        frm1.grid(row=5, column=1, sticky=W)
+        frm1.grid(row=6, column=1, sticky=W)
         chk1 = ttk.Checkbutton(frm1, text='d ', variable=self.data_type_var['d'])
         chk2 = ttk.Checkbutton(frm1, text='t ', variable=self.data_type_var['t'])
         chk3 = ttk.Checkbutton(frm1, text='a ', variable=self.data_type_var['a'])
@@ -605,21 +621,23 @@ class PV(tk.Tk):
         chk9 = ttk.Checkbutton(frm1, text='m ', variable=self.data_type_var['m'])
         chk10 = ttk.Checkbutton(frm1, text='j ', variable=self.data_type_var['j'])
         chk11 = ttk.Checkbutton(frm1, text='k', variable=self.data_type_var['k'])
+        chk12 = ttk.Checkbutton(frm1, text='s', variable=self.data_type_var['s'])
         
         chk1.grid(row=0, column=0)
         chk2.grid(row=0, column=1)
         chk3.grid(row=0, column=2)
         chk4.grid(row=0, column=3)
         chk5.grid(row=0, column=4)
+        chk8.grid(row=0, column=5)
         chk6.grid(row=1, column=0)
         chk7.grid(row=1, column=1)
-        chk8.grid(row=1, column=2)
-        chk9.grid(row=1, column=3)
-        chk10.grid(row=1, column=4)
-        chk11.grid(row=1, column=5)
+        chk12.grid(row=1, column=2)
+        chk10.grid(row=1, column=3)
+        chk11.grid(row=1, column=4)
+        chk9.grid(row=1, column=5)
 
         frm3 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons relative,absolute,median,mean,...
-        frm3.grid(row=5, column=2, sticky=W)
+        frm3.grid(row=6, column=2, sticky=W)
 
         rdo20 = ttk.Radiobutton(frm3, text='relative', variable=self.rel_abs_var, value='relative')
         rdo21 = ttk.Radiobutton(frm3, text='absolute', variable=self.rel_abs_var, value='absolute')
@@ -638,7 +656,7 @@ class PV(tk.Tk):
 #        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
         frm4 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons lf,rf,...
-        frm4.grid(row=5, column=3, sticky=W)
+        frm4.grid(row=6, column=3, sticky=W)
 
         rdo11 = ttk.Radiobutton(frm4, text='lb', variable=self.data_source_var, value='lb')
         rdo12 = ttk.Radiobutton(frm4, text='lf', variable=self.data_source_var, value='lf')
@@ -674,7 +692,7 @@ class PV(tk.Tk):
         can.create_polygon(23, 7, 27.5, 2, 32, 7, fill="blanched almond", outline="black") # nose
 
         frm2 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for Intervals, t_initial, t_final
-        frm2.grid(row=12, column=0, columnspan=3, sticky=W)
+        frm2.grid(row=13, column=0, columnspan=3, sticky=W)
 
         lbl4 = ttk.Label(frm2, text='Intervals', width=12)
         lbl5 = ttk.Label(frm2, text='t_initial', width=10)
@@ -701,7 +719,7 @@ class PV(tk.Tk):
             self.EntryObject.append(ttk.Entry(frm2, width=8, textvariable=self.sva[i][2]).grid(row=i+1, column=3, sticky=W)) # tf entry
 
         btn1 = ttk.Button(frm2, text='Save', command=self.save_session_data)
-        btn1.grid(row=10, column=2, columnspan=2)
+        btn1.grid(row=14, column=2, columnspan=2)
         
 #        self.frame.rowconfigure(1, weight=1)
 #        self.frame.columnconfigure((0,1), weight=1, uniform=1)
@@ -717,6 +735,7 @@ class PV(tk.Tk):
 #        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
         self.widBreath = chk6
         self.widHeart = chk7
+        self.widBtn = chk12
 
         update_session_data(self) # Causes update even when do combobox selection has been made
     """        
@@ -830,9 +849,6 @@ class PV(tk.Tk):
         return None
 
     def draw_psd(self):
-        popup = WinPsd(self)
-        popup.geometry('720x480') # Set dimensions of popup window to 800x500 pixels
-        popup.wm_title("Power Spectral Density")
         # In preparation for plotting, get the current radiobutton selection and the 
         # corresponding initial and final times of the interval        
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
@@ -853,7 +869,9 @@ class PV(tk.Tk):
             interval_string = 'full session'
 
         d = self.data_source_var.get()
-        graph_title = 'Power Spectral Density at '+str(d)
+        graph_title = 'Power Spectral Density at '+str(d)+'\n'\
+            +recording+' ('+subject+') '+title+'\n'\
+            +interval_string
         i = int(ti*self.fs)
         f = int(tf*self.fs)
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
@@ -864,12 +882,11 @@ class PV(tk.Tk):
 #        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
         ydata, xdata = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
         
-        popup.draw(xdata, ydata)
-
-        plt.title(graph_title+'\n'\
-            +recording+' ('+subject+') '+title+'\n'\
-            +interval_string, fontsize = 'large')
-        plt.show()
+        popup = WinPsd(self)
+        popup.geometry('720x480') # Set dimensions of popup window to 800x500 pixels
+        popup.wm_title("Power Spectral Density")
+        
+        popup.draw(xdata, ydata, graph_title)
         
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
@@ -877,7 +894,7 @@ class PV(tk.Tk):
         
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
-
+        
         
     def draw_raw_eeg(self):
         popup = tk.Tk()
@@ -1302,13 +1319,13 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         graph_title = 'EEG Absolute Power'
                         plt.xlabel('time (s)')
                         plt.ylabel('absolute power (Bels)')
-                        plt.ylim(0,100)
+                        #plt.ylim(0,100)
                         # The factor 30 and shift 1.667 are chosen empirically so that range of absolute power values are withing range 0 - 100
                         self.ax.plot(self.absolute_df[band].index[t_range], 30*(self.absolute_df[band][t_range][d]+1.667), color=plotcolor[d], label=plotlabel[d])
                         if self.med_mean_var.get()=='median':
                             median_val = 30*(self.absolute_df[band][t_range][d]+1.667).median()
                             std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std()
-                            plt.axhline(median_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
                             the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
                             self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
                                         xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
@@ -1317,7 +1334,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         elif self.med_mean_var.get()=='mean':
                             mean_val = 30*(self.absolute_df[band][t_range][d]+1.667).mean()
                             std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std()
-                            plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
                             the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
                             #print(the_median)
                             #median_list.append(the_median)
@@ -1337,7 +1354,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         if self.med_mean_var.get()=='median':
                             median_val = self.relative_df[band][t_range][d].median()
                             std_val = self.relative_df[band][t_range][d].std()
-                            plt.axhline(median_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
                             the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
                             self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
                                         xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
@@ -1346,7 +1363,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         elif self.med_mean_var.get()=='mean':
                             mean_val = self.relative_df[band][t_range][d].mean()
                             std_val = self.relative_df[band][t_range][d].std()
-                            plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
+                            plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
                             the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
                             #print(the_median)
                             #median_list.append(the_median)
@@ -1375,7 +1392,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
                     self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range]*fourthirds, color=plotcolor[d], label=plotlabel[d])
                     mean_val = self.user_df[d][t_range][d].mean()*fourthirds
-                    plt.axhline(mean_val, 0, 1, linewidth=2, color=plotcolor[d])
+                    plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
                     the_mean = 'mean '+str('%.1f' % mean_val)
                     mean_list.append(the_mean)
                     #print(the_mean)
@@ -1400,6 +1417,14 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     graph_title = 'Respiration'
                     plt.xlabel('time (s)')
                     plt.ylabel('pressure (arbitrary units)')
+                elif q in {'s'}:
+                    d = str(q)
+                    #print('d=',d)
+                    t_range = np.logical_and(ti < self.button_df.index, self.button_df.index < tf)
+                    self.ax.plot(self.button_df[cardioresp[d]].index[t_range], self.button_df[cardioresp[d]][t_range], color=plotcolor[d], label=plotlabel[d])
+                    graph_title = 'Button Press'
+                    plt.xlabel('time (s)')
+                    plt.ylabel('current (arbitrary units)')
                 
         # Adjust the width of the window so that legend is visible        
         box = self.ax.get_position()
