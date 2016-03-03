@@ -301,10 +301,12 @@ class PV(tk.Tk):
         self.abs_scale_var = DoubleVar()
         self.c_scale_var = DoubleVar()
         self.m_scale_var = DoubleVar()
-        self.p_offset_var = DoubleVar()
-        self.p_scale_var = DoubleVar()
         self.v_offset_var = DoubleVar()
         self.v_scale_var = DoubleVar()
+        self.p_offset_var = DoubleVar()
+        self.p_scale_var = DoubleVar()
+        self.s_offset_var = DoubleVar()
+        self.s_scale_var = DoubleVar()
        
         self.duration_var = StringVar()
         self.notes_var = StringVar()
@@ -350,10 +352,12 @@ class PV(tk.Tk):
         self.abs_scale_var.set(30.0)
         self.c_scale_var.set(1.333)
         self.m_scale_var.set(1.333)
-        self.p_offset_var.set(0.0)
-        self.p_scale_var.set(1.0)
         self.v_offset_var.set(0.0)
-        self.v_scale_var.set(1.0)
+        self.v_scale_var.set(0.5)
+        self.p_offset_var.set(103.0) # 103 is close to the minimum pressure 
+        self.p_scale_var.set(0.15)   # range of pressure values is about 6.0
+        self.s_offset_var.set(0.5)
+        self.s_scale_var.set(0.3)
         
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
@@ -475,7 +479,6 @@ class PV(tk.Tk):
             
             # Read data from files indicated as existent by checkboxes
             if str(self.sessions_df['eeg'][index]) == '1':
-                #print('reading EEG data')
                 self.absolute_df = pd.read_hdf(self.path+recording+'_eeg_abs.h5', 'abs_data')
                 self.relative_df = pd.read_hdf(self.path+recording+'_eeg_rel.h5', 'rel_data')
                 self.user_df = pd.read_hdf(self.path+recording+'_eeg_user.h5', 'user_data')
@@ -485,17 +488,11 @@ class PV(tk.Tk):
                 timeseries = np.arange(nsamples)/self.fs
                 self.raw_df.insert(0, 't', pd.Series(timeseries, index=self.raw_df.index))
             if str(self.sessions_df['hrt'][index]) == '1':
-                #print('reading cardio data')
-                # Try to normalize heart values to minimize overlap with breath and eeg
-                self.cardio_df = (pd.read_hdf(self.path+recording+'_cardio.h5', 'cardio_data') + 1.0)/8.0 + 0.5
+                self.cardio_df = pd.read_hdf(self.path+recording+'_cardio.h5', 'cardio_data')
             if str(self.sessions_df['bth'][index]) == '1':
-                #print('reading respiration data')
-                # Try to normalize breath values to minimize overlap with heart and eeg (by subtracting 103)
-                # p' = (42.9)*p - 58.6 so that breath can be plotted with gamma absolute on same graph
-                self.resp_df = ((pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)*42.9-58.6) # for rec33
-#                self.resp_df = ((pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data') - 103)*20) # for rec122
+                self.resp_df = pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data')
             if str(self.sessions_df['btn'][index]) == '1':
-                self.button_df = (pd.read_hdf(self.path+recording+'_button.h5', 'btn_data') + 1.0)/8.0 + 0.5
+                self.button_df = pd.read_hdf(self.path+recording+'_button.h5', 'btn_data')
     
         def update_notes(notes):
             self.sessions_df.set(current_index, 'notes', notes)
@@ -541,6 +538,14 @@ class PV(tk.Tk):
             else: # breath data does not exist
                 self.widBreath.configure(state='disabled')
                 self.uncheck_data_source_widgets(['p']) # EEG bands do not apply
+            if self.breath_check_value.get(): # button data exists
+                if graph == 'timeseries':
+                    self.widButton.configure(state='normal')
+                else:
+                    self.widButton.configure(state='disabled')
+            else: # button data does not exist
+                self.widButton.configure(state='disabled')
+                self.uncheck_data_source_widgets(['s']) # EEG bands do not apply
                     
                 
         def update_labels():
@@ -651,7 +656,7 @@ class PV(tk.Tk):
         rdo23.grid(row=1, column=1, sticky=E)
 
         cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
-        cbx2.grid(row=11, column=1, sticky=W)
+        cbx2.grid(row=12, column=1, sticky=W)
         cbx2['values'] = ('mean', 'median', 'std', 'meanstd')
 #        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
@@ -703,7 +708,7 @@ class PV(tk.Tk):
         lbl6.grid(row=0, column=3, sticky=E)
 
         btn0 = ttk.Button(self.frame, text='Display', command=self.select_graph)
-        btn0.grid(row=11, column=3)
+        btn0.grid(row=12, column=3)
 
         for i in range(9):
             self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
@@ -735,16 +740,9 @@ class PV(tk.Tk):
 #        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
         self.widBreath = chk6
         self.widHeart = chk7
-        self.widBtn = chk12
+        self.widButton = chk12
 
         update_session_data(self) # Causes update even when do combobox selection has been made
-    """        
-    def show_psd(self):
-        xdata,ydata = [range(50)],[range(50)] #get some data from somewhere
-        popup = WinPsd(self)
-        popup.wm_title("Power Spectral Density")
-        popup.draw(xdata, ydata)
-    """
         
     def uncheck_data_source_widgets(self, srclist):
         """
@@ -771,6 +769,30 @@ class PV(tk.Tk):
         self.frame = ttk.Frame(nb, name='settings')
         # add to notebook (underline = index for short-cut character)
         nb.add(self.frame, text='Settings', underline=0, padding=2)
+        lbl20 = ttk.Label(self.frame, width=10, anchor=tk.E, text='v offset')
+        etr20 = ttk.Entry(self.frame, width=20, textvariable=self.v_offset_var)
+        lbl21 = ttk.Label(self.frame, width=10, anchor=tk.E, text='v scale')
+        etr21 = ttk.Entry(self.frame, width=20, textvariable=self.v_scale_var)
+        lbl22 = ttk.Label(self.frame, width=10, anchor=tk.E, text='p offset')
+        etr22 = ttk.Entry(self.frame, width=20, textvariable=self.p_offset_var)
+        lbl23 = ttk.Label(self.frame, width=10, anchor=tk.E, text='p scale')
+        etr23 = ttk.Entry(self.frame, width=20, textvariable=self.p_scale_var)
+        lbl24 = ttk.Label(self.frame, width=10, anchor=tk.E, text='s offset')
+        etr24 = ttk.Entry(self.frame, width=20, textvariable=self.s_offset_var)
+        lbl25 = ttk.Label(self.frame, width=10, anchor=tk.E, text='s scale')
+        etr25 = ttk.Entry(self.frame, width=20, textvariable=self.s_scale_var)
+        lbl20.grid(row=0, column=0, sticky=W)
+        etr20.grid(row=0, column=1, sticky=W)
+        lbl21.grid(row=1, column=0, sticky=W)
+        etr21.grid(row=1, column=1, sticky=W)
+        lbl22.grid(row=0, column=2)
+        etr22.grid(row=0, column=3)
+        lbl23.grid(row=1, column=2)
+        etr23.grid(row=1, column=3)
+        lbl24.grid(row=0, column=4, sticky=E)
+        etr24.grid(row=0, column=5, sticky=E)
+        lbl25.grid(row=1, column=4, sticky=E)
+        etr25.grid(row=1, column=5, sticky=E)
         
         
     def draw_spectrogram(self):
@@ -1149,7 +1171,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                    # rows are lb, lf, rf, rb
                     for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                         for i in range(len(freqbands)):
-                            values_list.append(30*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+1.667))
+                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean())
 #                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+1))
                         values_array.append(values_list)
                         values_list = []
@@ -1157,7 +1179,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                    # rows are lb, lf, rf, rb
                     for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                         for i in range(len(freqbands)):
-                            values_list.append(30*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median()+1.667))
+                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median())
 #                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median()+1))
                         values_array.append(values_list)
                         values_list = []
@@ -1296,9 +1318,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
         
-        fourthirds = 4/3.0  #To undo the 0.75 factor of c and m values (set8)
-                            #introduced in EEG-open-21.py when converting CSV to h5
-            
         graph_title = ''
         i=0
 
@@ -1319,12 +1338,10 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         graph_title = 'EEG Absolute Power'
                         plt.xlabel('time (s)')
                         plt.ylabel('absolute power (Bels)')
-                        #plt.ylim(0,100)
-                        # The factor 30 and shift 1.667 are chosen empirically so that range of absolute power values are withing range 0 - 100
-                        self.ax.plot(self.absolute_df[band].index[t_range], 30*(self.absolute_df[band][t_range][d]+1.667), color=plotcolor[d], label=plotlabel[d])
+                        self.ax.plot(self.absolute_df[band].index[t_range], self.absolute_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
                         if self.med_mean_var.get()=='median':
-                            median_val = 30*(self.absolute_df[band][t_range][d]+1.667).median()
-                            std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std()
+                            median_val = self.absolute_df[band][t_range][d].median()
+                            std_val = self.absolute_df[band][t_range][d].std()
                             plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
                             the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
                             self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
@@ -1332,8 +1349,8 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                         color=plotcolor[d], backgroundcolor='white',
                                         horizontalalignment='left', verticalalignment='top')
                         elif self.med_mean_var.get()=='mean':
-                            mean_val = 30*(self.absolute_df[band][t_range][d]+1.667).mean()
-                            std_val = 30*(self.absolute_df[band][t_range][d]+1.667).std()
+                            mean_val = self.absolute_df[band][t_range][d].mean()
+                            std_val = self.absolute_df[band][t_range][d].std()
                             plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
                             the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
                             #print(the_median)
@@ -1348,8 +1365,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         graph_title = 'EEG Relative Power'
                         plt.xlabel('time (s)')
                         plt.ylabel('relative power (fraction)')
-                        plt.ylim(0,1.0) # relative power in any one band never seems to exceed 80%
-                        print('d='+str(d))
+                        #print('d='+str(d))
                         self.ax.plot(self.relative_df[band].index[t_range], self.relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
                         if self.med_mean_var.get()=='median':
                             median_val = self.relative_df[band][t_range][d].median()
@@ -1372,11 +1388,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                         color=plotcolor[d], backgroundcolor='white',
                                         horizontalalignment='left', verticalalignment='top')
                         i+=1
-                        #print('median_list'+str(median_list))
-#                        if self.med_mean_var.get()=='mean':
-#                            self.med_mean_legend(mean_list, d)
-#                        if self.med_mean_var.get()=='median':
-#                            self.med_mean_legend(median_list, d)
                 elif q in {'j', 'k'}:
                     d = str(q)
                     #print('d=',d)
@@ -1388,10 +1399,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     graph_title = "Muse Values for 'concentration' and 'mellow'"
                     plt.xlabel('time (s)')
                     plt.ylabel('fraction')
-    #                    plt.ylim(0,1) # range of concentration and mellow are 0 - 1
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
-                    self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range]*fourthirds, color=plotcolor[d], label=plotlabel[d])
-                    mean_val = self.user_df[d][t_range][d].mean()*fourthirds
+                    self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
+                    mean_val = self.user_df[d][t_range][d].mean()
                     plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
                     the_mean = 'mean '+str('%.1f' % mean_val)
                     mean_list.append(the_mean)
@@ -1405,7 +1415,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     d = str(q)
                     #print('d=',d)
                     t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 
-                    self.ax.plot(self.cardio_df[cardioresp[d]].index[t_range], self.cardio_df[cardioresp[d]][t_range], color=plotcolor[d], label=plotlabel[d])
+                    self.ax.plot(self.cardio_df[cardioresp[d]].index[t_range], \
+                        self.v_scale_var.get()*(self.cardio_df[cardioresp[d]][t_range]-self.v_offset_var.get()), \
+                        color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Electrocardiogram'
                     plt.xlabel('time (s)')
                     plt.ylabel('voltage (arbitrary units)')
@@ -1413,7 +1425,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     d = str(q)
                     #print('d=',d)
                     t_range = np.logical_and(ti < self.resp_df.index, self.resp_df.index < tf)
-                    self.ax.plot(self.resp_df[cardioresp[d]].index[t_range], self.resp_df[cardioresp[d]][t_range], color=plotcolor[d], label=plotlabel[d])
+                    self.ax.plot(self.resp_df[cardioresp[d]].index[t_range], \
+                        self.p_scale_var.get()*(self.resp_df[cardioresp[d]][t_range]-self.p_offset_var.get()), \
+                        color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Respiration'
                     plt.xlabel('time (s)')
                     plt.ylabel('pressure (arbitrary units)')
@@ -1421,7 +1435,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     d = str(q)
                     #print('d=',d)
                     t_range = np.logical_and(ti < self.button_df.index, self.button_df.index < tf)
-                    self.ax.plot(self.button_df[cardioresp[d]].index[t_range], self.button_df[cardioresp[d]][t_range], color=plotcolor[d], label=plotlabel[d])
+                    self.ax.plot(self.button_df[cardioresp[d]].index[t_range], \
+                        self.s_scale_var.get()*(self.button_df[cardioresp[d]][t_range]-self.s_offset_var.get()), \
+                        color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Button Press'
                     plt.xlabel('time (s)')
                     plt.ylabel('current (arbitrary units)')
