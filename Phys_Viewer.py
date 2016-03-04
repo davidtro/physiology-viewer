@@ -318,10 +318,12 @@ class PV(tk.Tk):
         self.heart_label = StringVar()
         self.breath_label = StringVar()
         self.button_label = StringVar()
-        self.sample_rate_var = IntVar()
+        self.labquest_sample_rate_var = IntVar()
+        self.muse_sample_rate_var = IntVar()
         self.rel_abs_var = StringVar()
         self.med_mean_var = StringVar()
         self.type_average_var = StringVar() # type of average (mean, median, std, meanstd) in tables
+        self.overlay_check_value = IntVar()
     
         self.interval = IntVar() # integer variable for keeping track 
         # of radiobutton selected
@@ -358,6 +360,7 @@ class PV(tk.Tk):
         self.p_scale_var.set(0.15)   # range of pressure values is about 6.0
         self.s_offset_var.set(0.5)
         self.s_scale_var.set(0.3)
+        self.overlay_check_value.set(0)
         
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
@@ -426,7 +429,8 @@ class PV(tk.Tk):
             self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
             self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
             self.button_check_value.set(self.sessions_df.ix[current_index]['btn'])
-            self.sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
+            self.labquest_sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
+            self.muse_sample_rate_var.set(220)
             #print('current_index=', current_index)
             #print('eeg_check_value=', self.eeg_check_value.get())
             #print('heart_check_value=', self.heart_check_value.get())
@@ -552,19 +556,19 @@ class PV(tk.Tk):
             #print('entering update_labels')
             #print('heart_check_value=', self.heart_check_value.get())
             if self.eeg_check_value.get():
-                self.eeg_label.set(' EEG')
+                self.eeg_label.set(' EEG ('+str(self.muse_sample_rate_var.get())+' Hz)')
             else:
                 self.eeg_label.set('')
             if self.heart_check_value.get():
-                self.heart_label.set(' Heart')
+                self.heart_label.set(' Heart ('+str(self.labquest_sample_rate_var.get())+' Hz)')
             else:
                 self.heart_label.set('')
             if self.breath_check_value.get():
-                self.breath_label.set(' Breath')
+                self.breath_label.set(' Breath ('+str(self.labquest_sample_rate_var.get())+' Hz)')
             else:
                 self.breath_label.set('')
             if self.button_check_value.get():
-                self.button_label.set(' Button')
+                self.button_label.set(' Button ('+str(self.labquest_sample_rate_var.get())+' Hz)')
             else:
                 self.button_label.set('')
             #print('heart_label=',self.heart_label.get())
@@ -606,6 +610,8 @@ class PV(tk.Tk):
         rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: update_widgets())
         rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: update_widgets())
 
+        chk13 = ttk.Checkbutton(self.frame, text='Overlay breath', variable=self.overlay_check_value)
+        
         rdo1.grid(row=6, column=0, sticky=W)
         rdo2.grid(row=8, column=0, sticky=W)
         rdo3.grid(row=9, column=0, sticky=W)
@@ -640,6 +646,8 @@ class PV(tk.Tk):
         chk10.grid(row=1, column=3)
         chk11.grid(row=1, column=4)
         chk9.grid(row=1, column=5)
+        
+        chk13.grid(row=8, column=1, sticky=W)
 
         frm3 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons relative,absolute,median,mean,...
         frm3.grid(row=6, column=2, sticky=W)
@@ -708,7 +716,7 @@ class PV(tk.Tk):
         lbl6.grid(row=0, column=3, sticky=E)
 
         btn0 = ttk.Button(self.frame, text='Display', command=self.select_graph)
-        btn0.grid(row=12, column=3)
+        btn0.grid(row=9, column=3)
 
         for i in range(9):
             self.sva[i][0].trace("w", lambda name, index, mode, var=self.sva[i][0], i=i:
@@ -722,6 +730,31 @@ class PV(tk.Tk):
             self.EntryObject.append(ttk.Entry(frm2, width=20, textvariable=self.sva[i][0]).grid(row=i+1, column=1,sticky=W)) # interval entry
             self.EntryObject.append(ttk.Entry(frm2, width=8, textvariable=self.sva[i][1]).grid(row=i+1, column=2, sticky=W)) #ti entry
             self.EntryObject.append(ttk.Entry(frm2, width=8, textvariable=self.sva[i][2]).grid(row=i+1, column=3, sticky=W)) # tf entry
+
+        txt1 = Text(self.frame, width=30, height=17, background='#F0F0F0', padx=5, pady=3)
+        txt1.insert('1.0', "Muse frequency bands:\n")
+        contents = "\
+  d ~ delta (f <=4 Hz)\n\
+  t ~ theta (4 < f <= 8 Hz)\n\
+  a ~ alpha (8 < f <=12 Hz)\n\
+  b ~ beta (12 < f <= 30 Hz)\n\
+  g ~ gamma (30 < f Hz)\n\
+LabQuest data:\n\
+  p ~ breath\n\
+  v ~ heart\n\
+  s ~ button press\n\
+Muse auxiliary:\n\
+  j ~ jaw clench\n\
+  k ~ eye blink\n\
+Muse proprietary:\n\
+  c ~ concentration\n\
+  m ~ mellow\n\
+"
+
+        txt1.insert(END, contents)
+        txt1['state'] = 'disabled'
+        txt1['relief'] = 'flat'
+        txt1.grid(row=11, column=2, rowspan=5, columnspan=2, sticky=N)
 
         btn1 = ttk.Button(frm2, text='Save', command=self.save_session_data)
         btn1.grid(row=14, column=2, columnspan=2)
@@ -827,9 +860,9 @@ class PV(tk.Tk):
         plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
         plt.xlim(ti, tf)
 
-#        cb = p.colorbar(im, shrink=0.9, pad=0.02)
-        cb = p.colorbar(im, shrink=0.9, pad=0.02)
-        cb.set_label('Intensity (dB)')
+        if self.overlay_check_value.get()==0: # Only display colorbar when not overlaying breath
+            cb = p.colorbar(im, shrink=0.9, pad=0.02)
+            cb.set_label('Intensity (dB)')
         
         recording = self.sessions_df.ix[current_index]['recording']
         title = self.sessions_df.ix[current_index]['title']
@@ -847,9 +880,20 @@ class PV(tk.Tk):
             +interval_string, fontsize = 'large')
 
         box = self.ax.get_position()
-#        self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
-#        self.ax.set_position([box.x0, box.y0-0.04, box.width, box.height*0.95])
         self.ax.set_position([box.x0, box.y0, box.width, box.height*0.95])
+        
+        if self.overlay_check_value.get():
+            ax2 = self.ax.twinx()
+            ax2.set_ylim(0,1)
+            ax2.set_ylabel('breath', color='blue')
+            ax2.yaxis.set_major_locator(plt.NullLocator()) #Turns off tick marks and numbers
+            ax2.set_xlim(ti, tf)
+            t_range = np.logical_and(ti < self.resp_df.index, self.resp_df.index < tf)
+            ax2.plot(self.resp_df['kPa'].index[t_range], \
+                self.p_scale_var.get()*(self.resp_df['kPa'][t_range]-self.p_offset_var.get()), \
+                color='blue')
+            box2 = ax2.get_position()
+            ax2.set_position([box2.x0, box2.y0, box2.width, box2.height*0.95])
 
         plt.show()
 
