@@ -508,21 +508,27 @@ class PV(tk.Tk):
             if self.eeg_check_value.get(): # EEG data exists
                 if graph == 'timeseries':
                     self.enable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)
+                    self.widOverlay.configure(state='disabled')
                 elif graph == 'spectrogram':
                     self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
                     self.enable_widget(self.widSrc)
+                    self.widOverlay.configure(state='normal')
                 elif graph == 'psd':
                     self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
                     self.enable_widget(self.widSrc)
+                    self.widOverlay.configure(state='disabled')
                 elif graph == 'raweeg':
                     self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
                     self.enable_widget(self.widSrc)
+                    self.widOverlay.configure(state='disabled')
                 elif graph == 'radar':
                     self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
                     self.enable_widget(self.widRelAbs)
+                    self.widOverlay.configure(state='disabled')
                 elif graph == 'table':
                     self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
                     self.enable_widget(self.widRelAbs)
+                    self.widOverlay.configure(state='disabled')
             else: # EEG data does not exist
                 self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
                 self.uncheck_data_source_widgets(['d', 't', 'a', 'b', 'g', 'c', 'm', 'j', 'k', 's'])
@@ -535,11 +541,13 @@ class PV(tk.Tk):
                 self.widHeart.configure(state='disabled')
                 self.uncheck_data_source_widgets(['v']) # EEG bands do not apply
             if self.breath_check_value.get(): # breath data exists
+                self.widOverlay.configure(state='normal')
                 if graph == 'timeseries':
                     self.widBreath.configure(state='normal')
                 else:
                     self.widBreath.configure(state='disabled')
             else: # breath data does not exist
+                self.widOverlay.configure(state='disabled')
                 self.widBreath.configure(state='disabled')
                 self.uncheck_data_source_widgets(['p']) # EEG bands do not apply
             if self.breath_check_value.get(): # button data exists
@@ -774,6 +782,7 @@ Muse proprietary:\n\
         self.widBreath = chk6
         self.widHeart = chk7
         self.widButton = chk12
+        self.widOverlay = chk13
 
         update_session_data(self) # Causes update even when do combobox selection has been made
         
