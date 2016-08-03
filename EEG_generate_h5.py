@@ -41,7 +41,7 @@ When EEG_generate_h5.py runs, type the desired session name at the prompt,
 'CSV filename (without extension)' e.g., 'rec25'
 
 """
-path = 'C:\\MuseRec\\'
+path = 'C:\\MuseRecK\\'
 
 print('path: '+path)
 session = input('CSV filename (without extension): ')

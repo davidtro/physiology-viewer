@@ -911,7 +911,7 @@ Muse proprietary:\n\
         lbl0.pack(side=tk.BOTTOM, fill=X)
         
         canvas = FigureCanvasTkAgg(p, master=popup)
-        canvas.show()
+#        canvas.show()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
@@ -1391,6 +1391,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         graph_title = 'EEG Absolute Power'
                         plt.xlabel('time (s)')
                         plt.ylabel('absolute power (Bels)')
+                        #self.ax.set_ylim([-1.0, 2.5]) ## KELLY
                         self.ax.plot(self.absolute_df[band].index[t_range], self.absolute_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
                         if self.med_mean_var.get()=='median':
                             median_val = self.absolute_df[band][t_range][d].median()
