@@ -13,9 +13,9 @@ http://still-breathing.net/software/
 """
 
 import tkinter as tk
-from tkinter import BOTH, TOP, LEFT, X, Y, N, S, E, W, END
+from tkinter import BOTH, TOP, LEFT, CENTER, X, Y, N, S, E, W, END
 from tkinter import ttk, Canvas, Frame, Toplevel, Text, IntVar, StringVar, DoubleVar
-
+from tkinter.filedialog import askopenfilename, askdirectory
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,6 +28,9 @@ from matplotlib.spines import Spine
 from matplotlib.projections.polar import PolarAxes
 from matplotlib.projections import register_projection
 #from matplotlib.figure import Figure
+
+from configparser import ConfigParser
+import os
 
 LARGE_FONT = ("Verdana", 12)
 NORM_FONT =  ("Verdana", 10)
@@ -61,7 +64,7 @@ plotcolor = {'d_m':'blue', 'dlb':'dodgerblue', 'dlf':'royalblue', 'drf':'cornflo
         'a_m':'green', 'alb':'limegreen', 'alf':'mediumseagreen', 'arf':'springgreen', 'arb':'lightgreen',
         'b_m':'darkred', 'blb':'brown', 'blf':'sienna', 'brf':'darkgoldenrod', 'brb':'darkorange',
         'g_m':'magenta', 'glb':'mediumpurple', 'glf':'orchid', 'grf':'mediumorchid', 'grb':'plum',
-        's':'black', 'k':'purple', 'j':'maroon', 'c':'goldenrod', 'm':'cadetblue', 'v':'red', 'p':'skyblue',
+        's':'black', 'k':'purple', 'j':'crimson', 'c':'goldenrod', 'm':'cadetblue', 'v':'red', 'p':'skyblue',
         'lb':'deeppink', 'lf':'deeppink', 'rf':'deeppink', 'rb':'deeppink',
         }
         
@@ -81,12 +84,6 @@ g_bands = {'g_m', 'glb', 'glf','grf','grb'}
 
 cardioresp = {'v':'mv', 'p':'kPa', 's':'ma'}
 
-# The following is used for psd semi-log graphs only
-XMIN = 0 # minimum frequency
-XMAX = 55 # maximum frequency
-YMIN = 0.1 # minimum PSD value
-YMAX = 100 # maximum PSD value
-lblY = YMAX - 30
 title_str = ''
 
 class WinPsd(Toplevel):
@@ -95,6 +92,12 @@ class WinPsd(Toplevel):
         self._create_plot()
 
     def _create_plot(self):
+        # The following is used for psd semi-log graphs only
+        XMIN = 0 # minimum frequency
+        XMAX = 55 # maximum frequency
+        YMIN = 0.1 # minimum PSD value
+        YMAX = 100 # maximum PSD value
+        lblY = YMAX - 30
         self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
 
@@ -233,7 +236,7 @@ def radar_factory(num_vars, frame='circle'):
 
         def _close_line(self, line):
             x, y = line.get_data()
-            # FIXME: markers at x[0], y[0] get doubled-up
+            #FIXME: markers at x[0], y[0] get doubled-up
             if x[0] != x[-1]:
                 x = np.concatenate((x, [x[0]]))
                 y = np.concatenate((y, [y[0]]))
@@ -293,6 +296,8 @@ class PV(tk.Tk):
         self.subject_var = StringVar()
         self.date_time_var = StringVar()
         self.graph_type_var = StringVar() # used by redio buttons for Time series, Radar, Table, etc.
+        self.data_dir_var = StringVar() # directory in which .h5 files are stored (generally C:\MedRec)
+        self.sessions_data_path_var = StringVar() # path to EEG_CardioRespSessions.xls
 
         self.data_source_var = StringVar() #used by redio buttons for lb, lf, rf, rb, left, right, etc.
         self.data_type_var = {'d': IntVar(), 't': IntVar(), 'a': IntVar(), 'b': IntVar(), 'g': IntVar(), \
@@ -307,6 +312,10 @@ class PV(tk.Tk):
         self.p_scale_var = DoubleVar()
         self.s_offset_var = DoubleVar()
         self.s_scale_var = DoubleVar()
+        self.k_offset_var = DoubleVar()
+        self.k_scale_var = DoubleVar()
+        self.j_offset_var = DoubleVar()
+        self.j_scale_var = DoubleVar()
        
         self.duration_var = StringVar()
         self.notes_var = StringVar()
@@ -322,7 +331,7 @@ class PV(tk.Tk):
         self.muse_sample_rate_var = IntVar()
         self.rel_abs_var = StringVar()
         self.med_mean_var = StringVar()
-        self.type_average_var = StringVar() # type of average (mean, median, std, meanstd) in tables
+        self.type_average_var = StringVar() # type of average (mean, median, standard deviation, inverse log) in tables
         self.overlay_check_value = IntVar()
     
         self.interval = IntVar() # integer variable for keeping track 
@@ -350,36 +359,220 @@ class PV(tk.Tk):
         self.data_source_var.set('lb') # initialize data_source as 'lb'
         self.type_average_var.set('mean') # initialize for type of table
         
+        self.inipath = '.\\pv.ini'
+        self.config = ConfigParser()
+        self.config.read(self.inipath)
+        if not os.path.exists(self.inipath):
+            self.config.add_section('data_directory')
+            self.config.add_section('ts_relative')
+            self.config.add_section('ts_absolute')
+            self.config.add_section('spectrogram')
+            self.config.add_section('psd')
+            self.config.add_section('raw_eeg')
+            self.config.add_section('rc_relative')
+            self.config.add_section('rc_absolute')
+            self.config.add_section('heart')
+            self.config.add_section('breath')
+            self.config.add_section('button_press')
+            self.config.add_section('eye_blink')
+            self.config.add_section('jaw_clench')
+                
+        
         self.abs_offset_var.set(1.667)
         self.abs_scale_var.set(30.0)
         self.c_scale_var.set(1.333)
         self.m_scale_var.set(1.333)
+        """
         self.v_offset_var.set(0.0)
         self.v_scale_var.set(0.5)
         self.p_offset_var.set(103.0) # 103 is close to the minimum pressure 
         self.p_scale_var.set(0.15)   # range of pressure values is about 6.0
         self.s_offset_var.set(0.5)
         self.s_scale_var.set(0.3)
+        self.k_offset_var.set(0.5)
+        self.k_scale_var.set(0.3)
+        self.j_offset_var.set(0.4)
+        self.j_scale_var.set(0.3)
+        """
         self.overlay_check_value.set(0)
         
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
 #        self.pack(expand=Y, fill=BOTH) # NECESSARY??
 #        self.master.title('Physiology Viewer') # NECESSARY??
-        self.load_session_data()
+        
+#        self.data_dir_var.set("C:\\MedRec\\")
+#        self.sessions_data_path_var.set("C:\\MedRec\\EEG_CardioRespSessions.xls")
+        self.fixed_var = [IntVar(), IntVar(), IntVar(), \
+                IntVar(), IntVar(), IntVar(), IntVar()]
+        #for i in range(6): # Set all Fixed checkboxes to unchecked initially
+        #    self.fixed_var[i].set(0)
+        self.spin_var = [[DoubleVar(), DoubleVar()], \
+                         [DoubleVar(), DoubleVar()], \
+                         [DoubleVar(), DoubleVar()], \
+                         [DoubleVar(), DoubleVar()], \
+                         [DoubleVar(), DoubleVar()], \
+                         [DoubleVar(), DoubleVar()], \
+                         [DoubleVar(), DoubleVar()]]
+        
+        self.read_settings() # read settings from pv.ini file
+        
+        try:
+            self.load_session_data()
+        except:
+            print('Failed to load data')
         self._create_viewer_panel()
-                         
+    
+    def get_data_path(self):
+        self.data_dir_var.set(askdirectory(\
+            initialdir="C:\\MedRec\\", \
+            title = "Choose directory where .h5 data files are located."))
+        self.load_session_data() 
+        # Reload session data from indicated directory
+    
+    def get_sessions_path(self):
+        self.sessions_data_path_var.set(askopenfilename(\
+            initialdir="C:\\MedRec\\", \
+            filetypes =(("Excel File", "*.xls"),("All Files","*.*")), \
+            title = "Choose spreadsheet file containing sessions data."))
+
+    #def load_session_data(self, dpath='C:\\MedRec\\', dfile='C:\\MedRec\\EEG_CardioRespSessions.xls'):
     def load_session_data(self):
         """
-        IMPORTANT: Currently data are stored in a hard-wired directory, C:\MedRec
-        Session data is an Excel file in that directory, EEG_CardioRespSessions.xls
+        The default directory for .h5 recording data files is C:\MedRec
+        The default file name for session data is C:\MedRec\EEG_CardioRespSessions.xls
         """
-        self.path = 'C:/MedRec/'
-        self.sessions_file = 'EEG_CardioRespSessions.xls'
-        self.sessions_data = pd.ExcelFile(self.path+self.sessions_file)
+        #self.path = self.data_dir_var.get()
+        #self.sessions_file = self.sessions_data_path_var.get()
+        #self.path = 'C:/MedRec/'
+        #self.sessions_file = 'EEG_CardioRespSessions.xls'
+        #self.path = dpath
+        #self.sessions_file = dfile
+        self.path = self.data_dir_var.get()
+        self.sessions_file = self.sessions_data_path_var.get()
+        #print('path='+self.path)
+        #print('sessions_file='+self.sessions_file)
+#        self.sessions_data = pd.ExcelFile(self.path+self.sessions_file)
+        self.sessions_data = pd.ExcelFile(self.sessions_file)
         self.sessions_df = self.sessions_data.parse('Sheet1', index_col='index', na_values=['None'])
 #        self.sessions_file.close()
             
+    class Spinbox(ttk.Widget):
+        def __init__(self, master, **kw):
+            ttk.Widget.__init__(self, master, 'ttk::spinbox', kw)
+            
+    def toggle_spin_widget(self, row, widlist=[]):
+        if self.fixed_var[row].get():
+            for wid in widlist:
+                wid.configure(state='normal')
+        else:
+            for wid in widlist:
+                wid.configure(state='disabled')
+                
+    def read_settings(self):
+        self.inipath = '.\\pv.ini'
+        self.config = ConfigParser()
+        self.config.read(self.inipath)
+        #print(self.config.get('ts_relative', 'fixed'))
+        
+        self.data_dir_var.set(self.config.get('directory', 'data_dir'))        
+        self.sessions_data_path_var.set(self.config.get('directory', 'sessions_file'))        
+        
+        self.fixed_var[0].set(self.config.get('ts_relative', 'fixed')) #chk2_11
+        self.spin_var[0][0].set(0.0) #lbl12
+        self.spin_var[0][1].set(self.config.get('ts_relative', 'y_max')) #spb2_13
+
+        self.fixed_var[1].set(self.config.get('ts_absolute', 'fixed')) #chk2_21
+        self.spin_var[1][0].set(self.config.get('ts_absolute', 'y_min')) #spb2_22
+        self.spin_var[1][1].set(self.config.get('ts_absolute', 'y_max')) #spb2_23
+
+        self.fixed_var[2].set(self.config.get('spectrogram', 'fixed')) #chk2_31
+        self.spin_var[2][0].set(0.0) #spb2_32
+        self.spin_var[2][1].set(self.config.get('spectrogram', 'y_max')) #spb2_33
+
+        self.fixed_var[3].set(self.config.get('psd', 'fixed')) #chk2_41
+        self.spin_var[3][0].set(self.config.get('psd', 'y_min')) #spb2_42
+        self.spin_var[3][1].set(self.config.get('psd', 'y_max')) #spb2_43
+
+        self.fixed_var[4].set(self.config.get('raw_eeg', 'fixed')) #chk2_51
+        self.spin_var[4][0].set(self.config.get('raw_eeg', 'y_min')) #spb2_52
+        self.spin_var[4][1].set(self.config.get('raw_eeg', 'y_max')) #spb2_53
+
+        self.fixed_var[5].set(self.config.get('rc_relative', 'fixed')) #chk2_71
+        self.spin_var[5][0].set(0.0) #lbl72
+        self.spin_var[5][1].set(self.config.get('rc_relative', 'y_max')) #spb2_73
+
+        self.fixed_var[6].set(self.config.get('rc_absolute', 'fixed')) #chk2_81
+        self.spin_var[6][0].set(0.0) #lbl82
+        self.spin_var[6][1].set(self.config.get('rc_absolute', 'y_max')) #spb2_83
+        
+        self.v_offset_var.set(self.config.get('heart', 'offset'))
+        self.v_scale_var.set(self.config.get('heart', 'scale'))
+
+        self.p_offset_var.set(self.config.get('breath', 'offset'))
+        self.p_scale_var.set(self.config.get('breath', 'scale'))
+
+        self.v_offset_var.set(self.config.get('button_press', 'offset'))
+        self.v_scale_var.set(self.config.get('button_press', 'scale'))
+
+        self.k_offset_var.set(self.config.get('eye_blink', 'offset'))
+        self.k_scale_var.set(self.config.get('eye_blink', 'scale'))
+
+        self.j_offset_var.set(self.config.get('jaw_clench', 'offset'))
+        self.j_scale_var.set(self.config.get('jaw_clench', 'scale'))
+
+
+    def save_settings(self):
+        #print(str(self.spin_var[1][1].value.get()))
+        self.config.set('directory', 'data_dir', str(self.data_dir_var.get()))
+        self.config.set('directory', 'sessions_file', str(self.sessions_data_path_var.get()))
+
+        self.config.set('ts_relative', 'fixed', str(self.fixed_var[0].get()))
+        self.config.set('ts_relative', 'y_min', '0')
+        self.config.set('ts_relative', 'y_max', str(self.spb2_13.get()))
+
+        self.config.set('ts_absolute', 'fixed', str(self.fixed_var[1].get()))
+        self.config.set('ts_absolute', 'y_min', str(self.spb2_22.get()))
+        self.config.set('ts_absolute', 'y_max', str(self.spb2_23.get()))
+
+        self.config.set('spectrogram', 'fixed', str(self.fixed_var[2].get()))
+        self.config.set('spectrogram', 'y_min', '0')
+        self.config.set('spectrogram', 'y_max', str(self.spb2_33.get()))
+
+        self.config.set('psd', 'fixed', str(self.fixed_var[3].get()))
+        self.config.set('psd', 'y_min', str(self.spb2_42.get()))
+        self.config.set('psd', 'y_max', str(self.spb2_43.get()))
+
+        self.config.set('raw_eeg', 'fixed', str(self.fixed_var[4].get()))
+        self.config.set('raw_eeg', 'y_min', str(self.spb2_52.get()))
+        self.config.set('raw_eeg', 'y_max', str(self.spb2_53.get()))
+
+        self.config.set('rc_relative', 'fixed', str(self.fixed_var[5].get()))
+        self.config.set('rc_relative', 'y_min', '0')
+        self.config.set('rc_relative', 'y_max', str(self.spb2_73.get()))
+
+        self.config.set('rc_absolute', 'fixed', str(self.fixed_var[6].get()))
+        self.config.set('rc_absolute', 'y_min', '0')
+        self.config.set('rc_absolute', 'y_max', str(self.spb2_83.get()))
+        
+        self.config.set('heart', 'offset', str(self.v_offset_var.get()))
+        self.config.set('heart', 'scale', str(self.v_scale_var.get()))
+
+        self.config.set('breath', 'offset', str(self.p_offset_var.get()))
+        self.config.set('breath', 'scale', str(self.p_scale_var.get()))
+
+        self.config.set('button_press', 'offset', str(self.s_offset_var.get()))
+        self.config.set('button_press', 'scale', str(self.s_scale_var.get()))
+
+        self.config.set('eye_blink', 'offset', str(self.k_offset_var.get()))
+        self.config.set('eye_blink', 'scale', str(self.k_scale_var.get()))
+
+        self.config.set('jaw_clench', 'offset', str(self.j_offset_var.get()))
+        self.config.set('jaw_clench', 'scale', str(self.j_scale_var.get()))
+
+        with open(self.inipath, 'w') as f:
+           self.config.write(f)
+    
     def _create_viewer_panel(self):
         viewerPanel = Frame(self, name='pv')
         viewerPanel.pack(side=TOP, fill=BOTH, expand=Y)
@@ -428,7 +621,7 @@ class PV(tk.Tk):
             self.eeg_check_value.set(self.sessions_df.ix[current_index]['eeg'])
             self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
             self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
-            self.button_check_value.set(self.sessions_df.ix[current_index]['btn'])
+#            self.button_check_value.set(self.sessions_df.ix[current_index]['btn'])
             self.labquest_sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
             self.muse_sample_rate_var.set(220)
             #print('current_index=', current_index)
@@ -673,7 +866,7 @@ class PV(tk.Tk):
 
         cbx2 = ttk.Combobox(self.frame, width=18, textvariable=self.type_average_var, state='readonly')
         cbx2.grid(row=12, column=1, sticky=W)
-        cbx2['values'] = ('mean', 'median', 'std', 'meanstd')
+        cbx2['values'] = ('mean', 'median', 'standard deviation', 'inverse log')
 #        cbx2.bind('<<ComboboxSelected>>', self.set_table_type())
 
         frm4 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons lf,rf,...
@@ -811,30 +1004,207 @@ Muse proprietary:\n\
         self.frame = ttk.Frame(nb, name='settings')
         # add to notebook (underline = index for short-cut character)
         nb.add(self.frame, text='Settings', underline=0, padding=2)
-        lbl20 = ttk.Label(self.frame, width=10, anchor=tk.E, text='v offset')
-        etr20 = ttk.Entry(self.frame, width=20, textvariable=self.v_offset_var)
-        lbl21 = ttk.Label(self.frame, width=10, anchor=tk.E, text='v scale')
-        etr21 = ttk.Entry(self.frame, width=20, textvariable=self.v_scale_var)
-        lbl22 = ttk.Label(self.frame, width=10, anchor=tk.E, text='p offset')
-        etr22 = ttk.Entry(self.frame, width=20, textvariable=self.p_offset_var)
-        lbl23 = ttk.Label(self.frame, width=10, anchor=tk.E, text='p scale')
-        etr23 = ttk.Entry(self.frame, width=20, textvariable=self.p_scale_var)
-        lbl24 = ttk.Label(self.frame, width=10, anchor=tk.E, text='s offset')
-        etr24 = ttk.Entry(self.frame, width=20, textvariable=self.s_offset_var)
-        lbl25 = ttk.Label(self.frame, width=10, anchor=tk.E, text='s scale')
-        etr25 = ttk.Entry(self.frame, width=20, textvariable=self.s_scale_var)
-        lbl20.grid(row=0, column=0, sticky=W)
-        etr20.grid(row=0, column=1, sticky=W)
-        lbl21.grid(row=1, column=0, sticky=W)
-        etr21.grid(row=1, column=1, sticky=W)
-        lbl22.grid(row=0, column=2)
-        etr22.grid(row=0, column=3)
-        lbl23.grid(row=1, column=2)
-        etr23.grid(row=1, column=3)
-        lbl24.grid(row=0, column=4, sticky=E)
-        etr24.grid(row=0, column=5, sticky=E)
-        lbl25.grid(row=1, column=4, sticky=E)
-        etr25.grid(row=1, column=5, sticky=E)
+
+        heading1 = ttk.Label(self.frame, text='Data Directory', font=("Helvetica", 14), padding=15)
+        frm1 = ttk.Frame(self.frame, borderwidth=2)
+        heading2 = ttk.Label(self.frame, text='Graph Limits', font=("Helvetica", 14), padding=15)
+        frm2 = ttk.Frame(self.frame, borderwidth=2)
+        heading3 = ttk.Label(self.frame, text='Incidental Scale and Offset', font=("Helvetica", 14), padding=15)
+        frm3 = ttk.Frame(self.frame, borderwidth=2)
+        
+        heading1.grid(row=1, column=0)
+        frm1.grid(row=2, column=0, sticky=W)
+        heading2.grid(row=3, column=0)
+        frm2.grid(row=4, column=0, sticky=W)
+        heading3.grid(row=5, column=0)
+        frm3.grid(row=6, column=0, sticky=W)
+        
+        lbl1_00 = ttk.Label(frm1, width=20, text='Data file directory')
+        etr1_10 = ttk.Entry(frm1, width=90, textvariable=self.data_dir_var)
+        btn1_11 = ttk.Button(frm1, text='Open', command=self.get_data_path)
+        lbl1_02 = ttk.Label(frm1, width=20, text='Sessions data file')
+        etr1_30 = ttk.Entry(frm1, width=90, textvariable=self.sessions_data_path_var)
+        btn1_31 = ttk.Button(frm1, text='Open', command=self.get_sessions_path)
+        
+        lbl1_00.grid(row=0, column=0, sticky=W)
+        etr1_10.grid(row=1, column=0, sticky=W)
+        btn1_11.grid(row=1, column=1, sticky=W)
+        lbl1_02.grid(row=2, column=0, sticky=W)
+        etr1_30.grid(row=3, column=0, sticky=W)
+        btn1_31.grid(row=3, column=1, sticky=W)
+        
+        self.lbl2_00 = ttk.Label(frm2, width=20, text='Time Series')
+        self.lbl2_01 = ttk.Label(frm2, width=8, text='Fixed')
+        self.lbl2_02 = ttk.Label(frm2, width=7, text='Min y', justify=LEFT)
+        self.lbl2_03 = ttk.Label(frm2, width=10, text='Max y')
+        self.lbl2_10 = ttk.Label(frm2, width=10, text='relative')
+        self.lbl2_12 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
+        opts13 = { 'from': 0.1, 'to': 1.0, 'increment': 0.1, 'state': 'disabled'}
+        self.spb2_13 = tk.Spinbox(frm2, textvariable=self.spin_var[0][1], **opts13)
+        #print(self.spb2_13.get())
+        self.chk2_11 = ttk.Checkbutton(frm2, variable=self.fixed_var[0], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(0, [self.spb2_13]))
+        self.toggle_spin_widget(0, [self.spb2_13])  
+
+        self.lbl2_20 = ttk.Label(frm2, width=10, text='absolute')
+        opts22 = { 'from': -2.0, 'to': 0.0, 'increment': 0.1, 'state': 'disabled'}
+        self.spb2_22 = tk.Spinbox(frm2, textvariable=self.spin_var[1][0], **opts22)
+        opts23 = { 'from': 0.0, 'to': 2.0, 'increment': 0.1, 'state': 'disabled'}
+        self.spb2_23 = tk.Spinbox(frm2, textvariable=self.spin_var[1][1], **opts23)
+        self.chk2_21 = ttk.Checkbutton(frm2, variable=self.fixed_var[1], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(1, [self.spb2_22, self.spb2_23]))
+        self.toggle_spin_widget(1, [self.spb2_22, self.spb2_23])  
+
+        self.lbl2_30 = ttk.Label(frm2, width=20, text='Spectrogram')
+        self.lbl2_32 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
+        opts33 = { 'from': 10, 'to': 100, 'increment': 5, 'state': 'disabled'}
+        self.spb2_33 = tk.Spinbox(frm2, textvariable=self.spin_var[2][1], **opts33)
+        self.chk2_31 = ttk.Checkbutton(frm2, variable=self.fixed_var[2], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(2, [self.spb2_33]))
+        self.toggle_spin_widget(2, [self.spb2_33])
+            
+        self.lbl2_40 = ttk.Label(frm2, width=20, text='PSD vs. Frequency')
+        opts42 = { 'from': 0, 'to': 0, 'increment': 0.1, 'state': 'disabled'}
+        self.spb2_42 = tk.Spinbox(frm2, textvariable=self.spin_var[3][0], **opts42)
+        opts43 = { 'from': 10, 'to': 100, 'increment': 5, 'state': 'disabled'}
+        self.spb2_43 = tk.Spinbox(frm2, textvariable=self.spin_var[3][1], **opts43)
+        self.chk2_41 = ttk.Checkbutton(frm2, variable=self.fixed_var[3], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(3, [self.spb2_42, self.spb2_43]))
+        self.toggle_spin_widget(3, [self.spb2_42, self.spb2_43])
+            
+        self.lbl2_50 = ttk.Label(frm2, width=10, text='Raw EEG')
+        opts52 = { 'from': 0, 'to': 800, 'increment': 100, 'state': 'disabled'}
+        self.spb2_52 = tk.Spinbox(frm2, textvariable=self.spin_var[4][0], **opts52)
+        opts53 = { 'from': 800, 'to': 1500, 'increment': 100, 'state': 'disabled'}
+        self.spb2_53 = tk.Spinbox(frm2, textvariable=self.spin_var[4][1], **opts53)
+        self.chk2_51 = ttk.Checkbutton(frm2, variable=self.fixed_var[4], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(4, [self.spb2_52, self.spb2_53]))
+        self.toggle_spin_widget(4, [self.spb2_52, self.spb2_53])
+        
+        self.lbl2_60 = ttk.Label(frm2, width=20, text='Radar Chart')
+        
+        self.lbl2_70 = ttk.Label(frm2, width=10, text='relative')
+        self.lbl2_72 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
+        opts73 = { 'from': 0, 'to': 1.0, 'increment': 0.1, 'state': 'disabled'}
+        self.spb2_73 = tk.Spinbox(frm2, textvariable=self.spin_var[5][1], **opts73)
+        self.chk2_71 = ttk.Checkbutton(frm2, variable=self.fixed_var[5], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(5, [self.spb2_73]))
+        self.toggle_spin_widget(5, [self.spb2_73])
+        
+        self.lbl2_80 = ttk.Label(frm2, width=10, text='absolute')
+        self.lbl2_82 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
+        opts83 = { 'from': 0, 'to': 100, 'increment': 10, 'state': 'disabled'}
+        self.spb2_83 = tk.Spinbox(frm2, textvariable=self.spin_var[6][1], **opts83)
+        self.chk2_81 = ttk.Checkbutton(frm2, variable=self.fixed_var[6], \
+            onvalue=1, offvalue=0, \
+            command=lambda: self.toggle_spin_widget(6, [self.spb2_83]))
+        self.toggle_spin_widget(6, [self.spb2_83])
+        
+        self.btn83 = ttk.Button(self.frame, text='Save Settings', command=self.save_settings)
+
+        self.lbl2_00.grid(row=0, column=0)
+        self.lbl2_01.grid(row=0, column=1)
+        self.lbl2_02.grid(row=0, column=2)
+        self.lbl2_03.grid(row=0, column=3)
+
+        self.lbl2_10.grid(row=1, column=0)
+        self.chk2_11.grid(row=1, column=1)
+        self.lbl2_12.grid(row=1, column=2)
+        self.spb2_13.grid(row=1, column=3)
+
+        self.lbl2_20.grid(row=2, column=0)
+        self.chk2_21.grid(row=2, column=1)
+        self.spb2_22.grid(row=2, column=2)
+        self.spb2_23.grid(row=2, column=3)
+
+        self.lbl2_30.grid(row=3, column=0, sticky=W)
+        self.chk2_31.grid(row=3, column=1)
+        self.lbl2_32.grid(row=3, column=2)
+        self.spb2_33.grid(row=3, column=3)
+
+        self.lbl2_40.grid(row=4, column=0, sticky=W)
+        self.chk2_41.grid(row=4, column=1)
+        self.spb2_42.grid(row=4, column=2)
+        self.spb2_43.grid(row=4, column=3)
+        
+        self.lbl2_50.grid(row=5, column=0, sticky=W)
+        self.chk2_51.grid(row=5, column=1)
+        self.spb2_52.grid(row=5, column=2)
+        self.spb2_53.grid(row=5, column=3)
+        
+        self.lbl2_60.grid(row=6, column=0, sticky=W)
+        
+        self.lbl2_70.grid(row=7, column=0)
+        self.chk2_71.grid(row=7, column=1)
+        self.lbl2_72.grid(row=7, column=2)
+        self.spb2_73.grid(row=7, column=3)
+        
+        self.lbl2_80.grid(row=8, column=0)
+        self.chk2_81.grid(row=8, column=1)
+        self.lbl2_82.grid(row=8, column=2)
+        self.spb2_83.grid(row=8, column=3)
+        
+        self.btn83.grid(row=9, column=0, sticky=E)
+        
+        lbl3_01 = ttk.Label(frm3, width=20, text='Heart')
+        lbl3_03 = ttk.Label(frm3, width=20, text='Breath')
+        lbl3_05 = ttk.Label(frm3, width=20, text='Button Press')
+        lbl3_10 = ttk.Label(frm3, width=10, anchor=tk.E, text='v offset')
+        etr3_11 = ttk.Entry(frm3, width=20, textvariable=self.v_offset_var)
+        lbl3_12 = ttk.Label(frm3, width=10, anchor=tk.E, text='p offset')
+        etr3_13 = ttk.Entry(frm3, width=20, textvariable=self.p_offset_var)
+        lbl3_14 = ttk.Label(frm3, width=10, anchor=tk.E, text='s offset')
+        etr3_15 = ttk.Entry(frm3, width=20, textvariable=self.s_offset_var)
+        lbl3_20 = ttk.Label(frm3, width=10, anchor=tk.E, text='v scale')
+        etr3_21 = ttk.Entry(frm3, width=20, textvariable=self.v_scale_var)
+        lbl3_22 = ttk.Label(frm3, width=10, anchor=tk.E, text='p scale')
+        etr3_23 = ttk.Entry(frm3, width=20, textvariable=self.p_scale_var)
+        lbl3_24 = ttk.Label(frm3, width=10, anchor=tk.E, text='s scale')
+        etr3_25 = ttk.Entry(frm3, width=20, textvariable=self.s_scale_var)
+
+        lbl3_31 = ttk.Label(frm3, width=20, text='Eye Blink')
+        lbl3_33 = ttk.Label(frm3, width=20, text='Jaw Clench')
+        lbl3_40 = ttk.Label(frm3, width=10, anchor=tk.E, text='k offset')
+        etr3_41 = ttk.Entry(frm3, width=20, textvariable=self.k_offset_var)
+        lbl3_42 = ttk.Label(frm3, width=10, anchor=tk.E, text='j offset')
+        etr3_43 = ttk.Entry(frm3, width=20, textvariable=self.j_offset_var)
+        lbl3_50 = ttk.Label(frm3, width=10, anchor=tk.E, text='k scale')
+        etr3_51 = ttk.Entry(frm3, width=20, textvariable=self.k_scale_var)
+        lbl3_52 = ttk.Label(frm3, width=10, anchor=tk.E, text='j scale')
+        etr3_53 = ttk.Entry(frm3, width=20, textvariable=self.j_scale_var)
+
+        lbl3_01.grid(row=0, column=1)
+        lbl3_03.grid(row=0, column=3)
+        lbl3_05.grid(row=0, column=5)
+        lbl3_10.grid(row=1, column=0, sticky=W)
+        etr3_11.grid(row=1, column=1, sticky=W)
+        lbl3_12.grid(row=1, column=2)
+        etr3_13.grid(row=1, column=3)
+        lbl3_14.grid(row=1, column=4, sticky=E)
+        etr3_15.grid(row=1, column=5, sticky=E)
+        lbl3_20.grid(row=2, column=0, sticky=W)
+        etr3_21.grid(row=2, column=1, sticky=W)
+        lbl3_22.grid(row=2, column=2)
+        etr3_23.grid(row=2, column=3)
+        lbl3_24.grid(row=2, column=4, sticky=E)
+        etr3_25.grid(row=2, column=5, sticky=E)
+
+        lbl3_31.grid(row=3, column=1)
+        lbl3_33.grid(row=3, column=3)
+        lbl3_40.grid(row=4, column=0, sticky=W)
+        etr3_41.grid(row=4, column=1, sticky=W)
+        lbl3_42.grid(row=4, column=2)
+        etr3_43.grid(row=4, column=3)
+        lbl3_50.grid(row=5, column=0, sticky=W)
+        etr3_51.grid(row=5, column=1, sticky=W)
+        lbl3_52.grid(row=5, column=2)
+        etr3_53.grid(row=5, column=3)
         
         
     def draw_spectrogram(self):
@@ -866,7 +1236,11 @@ Muse proprietary:\n\
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
         signal = self.raw_df[r][i_range]
         Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
-        plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
+        #plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
+        if self.fixed_var[2].get() == 1:
+            self.ax.set_ylim([self.spin_var[2][0].get(), self.spin_var[2][1].get()])
+        else:
+            self.ax.set_ylim(0, 110)
         plt.xlim(ti, tf)
 
         if self.overlay_check_value.get()==0: # Only display colorbar when not overlaying breath
@@ -956,7 +1330,9 @@ Muse proprietary:\n\
 #        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220, color="black")
 #        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
         ydata, xdata = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
+#        ydata, xdata = m.psd(signal, NFFT=2048, noverlap=512, Fs=220)
         
+#        self.ax.set_ylim([self.spin_var[3][0].get(), self.spin_var[3][1].get()])
         popup = WinPsd(self)
         popup.geometry('720x480') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Power Spectral Density")
@@ -1008,6 +1384,8 @@ Muse proprietary:\n\
         i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
         self.ax.plot(self.raw_df[d][i_range].index, self.raw_df[d][i_range], color=plotcolor[d], label=plotlabel[d])
 
+        if self.fixed_var[4].get() == 1:
+            self.ax.set_ylim([self.spin_var[4][0].get(), self.spin_var[4][1].get()])
         plt.title(graph_title+'\n'\
             +recording+' ('+subject+') '+title+'\n'\
             +interval_string, fontsize = 'large')
@@ -1058,7 +1436,7 @@ Muse proprietary:\n\
         if self.rel_abs_var.get()=='absolute': # Absolute values
             popup.wm_title("Radar Chart")
 #            graph_title = 'EEG Inverse Log of Mean Absolute Band Power'
-            graph_title = 'EEG of Mean Absolute Band Power'
+            graph_title = 'EEG Mean Absolute Band Power'
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
 #            print('t_range for absolute')
 #            print(t_range)
@@ -1074,7 +1452,7 @@ Muse proprietary:\n\
                 values_list = []
         elif self.rel_abs_var.get()=='relative': # Relative values
             popup.wm_title("Radar Charts")
-            graph_title = 'EEG Median Relative Band Power'
+            graph_title = 'EEG Mean Relative Band Power'
             t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
 #            print('t_range for relative')
 #            print(t_range)
@@ -1082,7 +1460,7 @@ Muse proprietary:\n\
             values_array = []
             for i in range(len(freqbands)):
                 for j in range(len(locations[i])-1, 0, -1): # omit average value; step down for proper radar display
-                    values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].median())
+                    values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].mean())
 #                    print('relative values_list')
 #                    print(values_list)
                 values_array.append(values_list)
@@ -1106,10 +1484,14 @@ Muse proprietary:\n\
 
         if self.rel_abs_var.get()=='absolute': # Absolute values
             plt.rgrids([20, 40, 60, 80])
-            plt.ylim(0, 100)
+            #plt.ylim(0, 100)
+            if self.fixed_var[6].get() == 1:
+                self.ax.set_ylim([self.spin_var[6][0].get(), self.spin_var[6][1].get()])
         elif self.rel_abs_var.get()=='relative': # Relative values
             plt.rgrids([0.2, 0.4, 0.6, 0.8])
-            plt.ylim(0, 0.8)
+            #plt.ylim(0, 0.8)
+            if self.fixed_var[5].get() == 1:
+                self.ax.set_ylim([self.spin_var[5][0].get(), self.spin_var[5][1].get()])
 #        plt.rgrids([0.2, 0.4, 0.6, 0.8])
         self.ax.set_title(interval_string, weight='bold', size='medium', position=(0.5, 1.1),
                      horizontalalignment='center', verticalalignment='center')
@@ -1161,21 +1543,16 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
     def draw_table(self):
         """
         In a new pop-up window, draws a text box and fills it with lines of data
-        corresponding to selected interval of a session. Options include mean,
-        median and standard deviation for either relative or absolute power.
-        EEG values for each of four sensors are in four rows.
+        corresponding to the selected interval of a session and the selection of
+        relative or absolute power. Dropdown menu options include mean, median, 
+        standard deviation, and inverse log (for absolute power only).
         
-        There are five columns of data: delta, theta, alpha, beta, gamma
-        and four rows: lb, lf, rf, rb. This format makes for ease in
-        copy/paste from the table into Excel when graphing power vs. time charts.
+        EEG values for each of four sensors are in four rows: lb, lf, rf, rb.
+        
+        There are five columns of data: delta, theta, alpha, beta, gamma.
+        Values are separated by tabs to facilitate pasting in Excel spreadsheets.
        
-        The grph commands 'mean', 'median' and 'std' display corresponding tables
-        of values.
-                
-        The grph command 'meanstd' is different. In the case of relative power,
-        it displays a table with both mean and standard deviation values.
-        In the case of absolute power, it displays inverse logarithms of
-        mean absolute values and corresponding standard deviations.
+        The values of table_type are 'mean', 'median', 'standard deviation', and 'inverse log' .
         """
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         if int_value > 0:
@@ -1184,7 +1561,6 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             interval_string = self.sva[self.interval.get()][0].get()
         else:
             interval_string = 'full session'
-        title = self.sessions_df.ix[current_index]['title']
         recording = self.sessions_df.ix[current_index]['recording']
         subject = self.sessions_df.ix[current_index]['subject']
         ti = float(self.sva[int_value][1].get())
@@ -1193,121 +1569,79 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         values_list = []
         values_array = []
         popup = tk.Tk()
-        grph = self.type_average_var.get()
-        if self.rel_abs_var.get()=='absolute': # Display absolute values normalized to range [0:100] in table
-            popup.wm_title("Table of EEG values")
+        table_type = self.type_average_var.get()
+        abs_rel = self.rel_abs_var.get()
+        if abs_rel=='absolute': # Display absolute values normalized to range [0:100] in table
+            popup.wm_title("Table of Absolute EEG values")
             t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
-            if grph == 'meanstd': # columns are delta, d-std, theta, t-std, alpha, a-std, beta, b-std, gamma, gstd 
+            if table_type == 'mean': # columns are delta, theta, alpha, beta, gamma
+                               # rows are lb, lf, rf, rb
+                for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
+                    for i in range(len(freqbands)):
+                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean())
+                    values_array.append(values_list)
+                    values_list = []
+            elif table_type == 'median': # columns are delta, theta, alpha, beta, gamma
+                               # rows are lb, lf, rf, rb
+                for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
+                    for i in range(len(freqbands)):
+                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median())
+                    values_array.append(values_list)
+                    values_list = []
+            elif table_type == 'standard deviation': # columns are delta, theta, alpha, beta, gamma
+                               # rows are lb, lf, rf, rb
+                for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
+                    for i in range(len(freqbands)):
+                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std())
+                    values_array.append(values_list)
+                    values_list = []
+            elif table_type == 'inverse log': # columns are delta, theta, alpha, beta, gamma
                                    # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
                         values_list.append(np.power(10,self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()))
-                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std())
-    #                print('values_list')
-    #                print(values_list)
                     values_array.append(values_list)
                     values_list = []
-    #            print('values_array')
-    #            print(values_array)
-                
-                dataline = recording+' inverse log of mean absolute values for ' +subject+' | '+ title + ' | ' + interval_string + ' | ' + '\n'
-                header = 'rows: lb, lf, rf, rb\ndelta d-std theta t-std alpha a-std beta  b-std gamma g-std\n'
-                values = '' # string of values for averages and standard deviations
-                for i in range(len(locations)-1): #loop over 4 locations
-                    for x in values_array[i]:
-                        values = values + str('%.3f' % x) + ' '
-                    values = values + '\n'
-    #            print('values')
-    #            print(values)
-            else: # grph is NOT meanstd
-                if grph == 'mean': # columns are delta, theta, alpha, beta, gamma
-                                   # rows are lb, lf, rf, rb
-                    for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
-                        for i in range(len(freqbands)):
-                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean())
-#                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()+1))
-                        values_array.append(values_list)
-                        values_list = []
-                elif grph == 'median': # columns are delta, theta, alpha, beta, gamma
-                                   # rows are lb, lf, rf, rb
-                    for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
-                        for i in range(len(freqbands)):
-                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median())
-#                            values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median()+1))
-                        values_array.append(values_list)
-                        values_list = []
-                elif grph == 'std': # columns are delta, theta, alpha, beta, gamma
-                                   # rows are lb, lf, rf, rb
-                    for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
-                        for i in range(len(freqbands)):
-                            values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std()+1) # CORRECT THIS!
-                        values_array.append(values_list)
-                        values_list = []
-                dataline = recording+' '+grph + ' normalized absolute values for ' +subject+' | '+ title + ' | ' + interval_string + ' | ' + '\n'
-                header = 'rows: lb, lf, rf, rb\ndelta theta alpha beta  gamma\n'
-                values = '' # string of values for averages and standard deviations
-#                print('values_array')
-#                print(values_array)
-                for i in range(len(locations)-1):
-                    for x in values_array[i]:
-                        values = values + str('%.1f' % x) + ' '
-                    values = values + '\n'
-        elif self.rel_abs_var.get()=='relative': # Display relative values in table
-            popup.wm_title("Table of EEG values")
+        elif abs_rel=='relative': # Display relative values in table
+            popup.wm_title("Table of Relative EEG values")
             t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
-            if grph == 'meanstd': # columns are delta, d-std, theta, t-std, alpha, a-std, beta, b-std, gamma, gstd 
-                                   # rows are lb, lf, rf, rb
+            if table_type == 'mean': # columns are delta, theta, alpha, beta, gamma
+                               # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
                         values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].mean())
-                        values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].std())
-    #                print('values_list')
-    #                print(values_list)
                     values_array.append(values_list)
                     values_list = []
-    #            print('values_array')
-    #            print(values_array)
-                
-                dataline = recording+' mean relative values for ' +subject+' | '+ title + ' | ' + interval_string + ' | ' + '\n'
-                header = 'rows: lb, lf, rf, rb\ndelta d-std theta t-std alpha a-std beta  b-std gamma g-std\n'
-                values = '' # string of values for averages and standard deviations
-                for i in range(len(locations)-1): #loop over 4 locations
-                    for x in values_array[i]:
-                        values = values + str('%.3f' % x) + ' '
-                    values = values + '\n'
-    #            print('values')
-    #            print(values)
-            else: # grph is NOT meanstd
-                if grph == 'mean': # columns are delta, theta, alpha, beta, gamma
+            elif table_type == 'median': # columns are delta, theta, alpha, beta, gamma
+                               # rows are lb, lf, rf, rb
+                for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
+                    for i in range(len(freqbands)):
+                        values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].median())
+                    values_array.append(values_list)
+                    values_list = []
+            elif table_type == 'standard deviation': # columns are delta, theta, alpha, beta, gamma
+                               # rows are lb, lf, rf, rb
+                for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
+                    for i in range(len(freqbands)):
+                        values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].std())
+                    values_array.append(values_list)
+                    values_list = []
+            elif table_type == 'inverse log': # columns are delta, theta, alpha, beta, gamma 
                                    # rows are lb, lf, rf, rb
-                    for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
-                        for i in range(len(freqbands)):
-                            values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].mean())
-                        values_array.append(values_list)
-                        values_list = []
-                elif grph == 'median': # columns are delta, theta, alpha, beta, gamma
-                                   # rows are lb, lf, rf, rb
-                    for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
-                        for i in range(len(freqbands)):
-                            values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].median())
-                        values_array.append(values_list)
-                        values_list = []
-                elif grph == 'std': # columns are delta, theta, alpha, beta, gamma
-                                   # rows are lb, lf, rf, rb
-                    for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
-                        for i in range(len(freqbands)):
-                            values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].std())
-                        values_array.append(values_list)
-                        values_list = []
-                dataline = recording+' '+grph + ' relative values for ' +subject+' | '+ title + ' | ' + interval_string + ' | ' + '\n'
-                header = 'rows: lb, lf, rf, rb\ndelta theta alpha beta  gamma\n'
-                values = '' # string of values for averages and standard deviations
-#                print('values_array')
-#                print(values_array)
-                for i in range(len(locations)-1):
-                    for x in values_array[i]:
-                        values = values + str('%.3f' % x) + ' '
-                    values = values + '\n'
+                for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
+                    for i in range(len(freqbands)):
+                        values_list.append(np.power(10,self.relative_df[freqbands[i]][t_range][locations[i][j]].mean()))
+                    values_array.append(values_list)
+                    values_list = []
+        dataline = abs_rel+' '+ table_type+' values for '+recording+' ('+ subject+', '+ interval_string+')\n'
+        header = 'rows: lb, lf, rf, rb\ndelta\ttheta\talpha\tbeta\tgamma\n'
+        values = '' # string of values for averages
+        for i in range(len(locations)-1): #loop over 4 locations
+            for x in values_array[i]:
+                values = values + str('%.3f' % x) + '\t'
+            values = values + abs_rel + '\t' + table_type +  '\n'
+#            print('values')
+#            print(values)
         txt1 = Text(popup, width=70, height=9, wrap=tk.WORD)
         txt1.insert(END, dataline+header+values)
         txt1.grid(row=1, column=1, sticky=W)
@@ -1341,7 +1675,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
     def draw_graph(self):
         """
         In a new pop-up window, draw a set of axes with labels and title,
-        and plot data for variables requested in grph command.
+        and plot data for variables requested.
         
         Median values are plotted for relative values; mean values for absolute.
         
@@ -1391,7 +1725,8 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         graph_title = 'EEG Absolute Power'
                         plt.xlabel('time (s)')
                         plt.ylabel('absolute power (Bels)')
-                        #self.ax.set_ylim([-1.0, 2.5]) ## KELLY
+                        if self.fixed_var[1].get() == 1:
+                            self.ax.set_ylim([self.spin_var[1][0].get(), self.spin_var[1][1].get()])
                         self.ax.plot(self.absolute_df[band].index[t_range], self.absolute_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
                         if self.med_mean_var.get()=='median':
                             median_val = self.absolute_df[band][t_range][d].median()
@@ -1419,6 +1754,8 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                         graph_title = 'EEG Relative Power'
                         plt.xlabel('time (s)')
                         plt.ylabel('relative power (fraction)')
+                        if self.fixed_var[0].get() == 1:
+                            self.ax.set_ylim([self.spin_var[0][0].get(), self.spin_var[0][1].get()])
                         #print('d='+str(d))
                         self.ax.plot(self.relative_df[band].index[t_range], self.relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
                         if self.med_mean_var.get()=='median':
@@ -1442,11 +1779,20 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                                         color=plotcolor[d], backgroundcolor='white',
                                         horizontalalignment='left', verticalalignment='top')
                         i+=1
-                elif q in {'j', 'k'}:
+                elif q in {'k'}:
                     d = str(q)
-                    #print('d=',d)
+                    print('d=',d)
                     t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
-                    self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
+                    self.ax.plot(self.user_df[d].index[t_range], \
+                        self.k_scale_var.get()*(self.user_df[d][t_range] - self.k_offset_var.get()), \
+                        color=plotcolor[d], label=plotlabel[d])
+                elif q in {'j'}:
+                    d = str(q)
+                    print('d=',d)
+                    t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
+                    self.ax.plot(self.user_df[d].index[t_range], \
+                        self.j_scale_var.get()*(self.user_df[d][t_range] - self.j_offset_var.get()), \
+                        color=plotcolor[d], label=plotlabel[d])
                 elif q in {'c', 'm'}:
                     d = str(q)
                     #print('d=',d)
@@ -1541,7 +1887,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         
         Presently, CANNOT UPDATE description text on Session tab.
         """
-        self.sessions_df.to_excel(self.path+self.sessions_file, \
+        #self.sessions_df.to_excel(self.path+self.sessions_file, \
+        #sheet_name='Sheet1', engine='xlsxwriter', merge_cells=False)
+        self.sessions_df.to_excel(self.sessions_file, \
         sheet_name='Sheet1', engine='xlsxwriter', merge_cells=False)
             
     def update_value(self, sv, i, j):
@@ -1555,10 +1903,20 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
             self.sessions_df.set_value(current_index, 'interval'+str(i), self.sva[i][0].get())
             #print('new name = '+str(self.sessions_df.get_value(current_index, 'interval'+str(i))))
         elif j==1:
-            self.sessions_df.set_value(current_index, 'ti'+str(i), self.sva[i][1].get())
+            #print('ti = '+str(self.sessions_df.get_value(current_index, 'ti'+str(i))))
+            try: # This prevents crashing when user tries to edit an NaN value for t_initial or t_final
+                self.sessions_df.set_value(current_index, 'ti'+str(i), self.sva[i][1].get())
+            except:
+                pass
+                #print('not updating ti')
             #print('new ti = '+str(self.sessions_df.get_value(current_index, 'ti'+str(i))))
         elif j==2:
-            self.sessions_df.set_value(current_index, 'tf'+str(i), self.sva[i][2].get())
+            #print('new tf = '+str(self.sessions_df.get_value(current_index, 'tf'+str(i))))
+            try:
+                self.sessions_df.set_value(current_index, 'tf'+str(i), self.sva[i][2].get())
+            except:
+                pass
+                #print('not updating tf')
             #print('new tf = '+str(self.sessions_df.get_value(current_index, 'tf'+str(i))))
         self.interval.set(0)
         
