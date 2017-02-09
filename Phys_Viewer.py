@@ -16,6 +16,7 @@ import tkinter as tk
 from tkinter import BOTH, TOP, LEFT, CENTER, X, Y, N, S, E, W, END
 from tkinter import ttk, Canvas, Frame, Toplevel, Text, IntVar, StringVar, DoubleVar
 from tkinter.filedialog import askopenfilename, askdirectory
+#import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -780,9 +781,23 @@ class PV(tk.Tk):
         lbl0 = ttk.Label(self.frame, textvariable=self.session_title_var, width=40, font=("Helvetica", 16))    
         lbl0.grid(row=0, column=0, columnspan=3, sticky=N)
 
-        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.title_var, state='readonly')
+        self.cbx1 = ttk.Combobox(self.frame, width=80, textvariable=self.title_var, state='readonly')
 #        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.person_title_var, state='readonly')
-        sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
+#        date_time = self.sessions_df.ix[current_index]['date_time']
+#        sessions_list = self.sessions_df['recording'] + ' - ' + str('{0:%Y-%m-%d}'.format(date_time)) + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
+#        sessions_list = self.sessions_df['recording'] + ' - ' + '{0:%Y-%m-%d}'.format(self.sessions_df['date_time']) + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
+#        date_time = self.sessions_df.ix[current_index]['date_time']
+#        sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
+#        print(sessions_list[100])
+#        print('\n---\n')
+#        print(self.sessions_df['date_time'])
+#        print('{0:%Y-%m-%d}'.format(self.sessions_df.ix[100]['date_time']))
+#        print('# of lines = ', len(self.sessions_df))
+        sessions_list = [str(self.sessions_df['recording'][i]) + ' - ' + \
+                         str(self.sessions_df['date_time'][i]) + ' - ' + \
+                         str(self.sessions_df['person'][i]) + ' - ' + \
+                         str(self.sessions_df['title'][i])
+                         for i in range(len(self.sessions_df))]
         self.cbx1['values'] = [row for row in sessions_list]
         self.cbx1.current(29) # Sets current value to first session involving brain waves
         self.cbx1.bind("<<ComboboxSelected>>", update_session_data)
