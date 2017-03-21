@@ -513,8 +513,8 @@ class PV(tk.Tk):
         self.p_offset_var.set(self.config.get('breath', 'offset'))
         self.p_scale_var.set(self.config.get('breath', 'scale'))
 
-        self.v_offset_var.set(self.config.get('button_press', 'offset'))
-        self.v_scale_var.set(self.config.get('button_press', 'scale'))
+        self.s_offset_var.set(self.config.get('button_press', 'offset'))
+        self.s_scale_var.set(self.config.get('button_press', 'scale'))
 
         self.k_offset_var.set(self.config.get('eye_blink', 'offset'))
         self.k_scale_var.set(self.config.get('eye_blink', 'scale'))
@@ -1654,7 +1654,8 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         for i in range(len(locations)-1): #loop over 4 locations
             for x in values_array[i]:
                 values = values + str('%.3f' % x) + '\t'
-            values = values + abs_rel + '\t' + table_type +  '\n'
+            values = values + '\n'
+#            values = values + abs_rel + '\t' + table_type +  '\n'
 #            print('values')
 #            print(values)
         txt1 = Text(popup, width=70, height=9, wrap=tk.WORD)
