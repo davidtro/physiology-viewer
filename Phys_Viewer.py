@@ -94,11 +94,15 @@ class WinPsd(Toplevel):
 
     def _create_plot(self):
         # The following is used for psd semi-log graphs only
-        XMIN = 0 # minimum frequency
+        XMIN = 3 # minimum frequency (used in log-log plot only)
         XMAX = 55 # maximum frequency
-        YMIN = 0.1 # minimum PSD value
-        YMAX = 100 # maximum PSD value
-        lblY = YMAX - 30
+        if self.master.fixed_var[3].get() == 1:
+            YMIN = self.master.spin_var[3][0].get() # minimum PSD y-value
+            YMAX = self.master.spin_var[3][1].get() # maximum PSD y-value
+        else:
+            YMIN = 0.1 # minimum PSD y-value
+            YMAX = 100 # maximum PSD y-value
+        lblY = 0.7*YMAX
         self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
 
@@ -111,15 +115,25 @@ class WinPsd(Toplevel):
 
         ax.set_xlabel('Frequency (Hz)')
         ax.set_ylabel('Power Spectral Density (dB/Hz)')
-        ax.set_xlim(XMIN, XMAX)
+        if self.master.loglog_check_value.get():
+            ax.set_xscale('log')
+            ax.set_xlim(XMIN, XMAX)
+        else:
+            ax.set_xlim(0, XMAX)
         ax.set_ylim(YMIN, YMAX)
+        
 
         band_patches = [
-            patches.Rectangle((XMIN, YMIN), 4, YMAX, facecolor="blue", alpha=0.2),
+            patches.Rectangle((0, YMIN), 4, YMAX, facecolor="blue", alpha=0.2),
             patches.Rectangle((4, YMIN), 4, YMAX, facecolor="cyan", alpha=0.2),
             patches.Rectangle((8, YMIN), 4, YMAX, facecolor="green", alpha=0.2),
             patches.Rectangle((12, YMIN), 18, YMAX, facecolor="orange", alpha=0.2),
             patches.Rectangle((30, YMIN), XMAX-30, YMAX, facecolor="magenta", alpha=0.2)]
+        # delta: 0 - 4 Hz
+        # theta: 4 - 8 Hz
+        # alpha: 8 -12 Hz
+        # beta: 12 - 30 Hz
+        # gamma: 30 - XMAX Hz
 
         for ptch in band_patches:
             ax.add_patch(ptch)
@@ -334,6 +348,7 @@ class PV(tk.Tk):
         self.med_mean_var = StringVar()
         self.type_average_var = StringVar() # type of average (mean, median, standard deviation, inverse log) in tables
         self.overlay_check_value = IntVar()
+        self.loglog_check_value = IntVar()
     
         self.interval = IntVar() # integer variable for keeping track 
         # of radiobutton selected
@@ -396,6 +411,7 @@ class PV(tk.Tk):
         self.j_scale_var.set(0.3)
         """
         self.overlay_check_value.set(0)
+        self.loglog_check_value.set(0)
         
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
@@ -827,6 +843,7 @@ class PV(tk.Tk):
         rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: update_widgets())
 
         chk13 = ttk.Checkbutton(self.frame, text='Overlay breath', variable=self.overlay_check_value)
+        chk14 = ttk.Checkbutton(self.frame, text='Log-log plot', variable=self.loglog_check_value)
         
         rdo1.grid(row=6, column=0, sticky=W)
         rdo2.grid(row=8, column=0, sticky=W)
@@ -864,6 +881,7 @@ class PV(tk.Tk):
         chk9.grid(row=1, column=5)
         
         chk13.grid(row=8, column=1, sticky=W)
+        chk14.grid(row=9, column=1, sticky=W)
 
         frm3 = ttk.Frame(self.frame, borderwidth=2, width=20) # frame for radio buttons relative,absolute,median,mean,...
         frm3.grid(row=6, column=2, sticky=W)

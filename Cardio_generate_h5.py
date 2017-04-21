@@ -7,7 +7,6 @@ Created on Sun Nov 04 11:30:19 2014
 @author: David Trowbridge
 """
 import numpy as np
-import scipy as sp
 
 from pandas import DataFrame
 import pandas as pd

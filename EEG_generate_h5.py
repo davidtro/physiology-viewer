@@ -134,11 +134,11 @@ for i in range(len(line_strings)):
     elif 'blink' in line_strings[i][1]:
         kv.append([ms/1000.0, (float(line_strings[i][2]))*0.5]) # Max value of blink (1) will be displayed in graph as 0.5
     elif 'jaw_clench' in line_strings[i][1]:
-        jv.append([ms/1000.0, (float(line_strings[i][2]))*0.35]) # Max value of jaw_clench (1) will be displayed in graph as 0.5
+        jv.append([ms/1000.0, (float(line_strings[i][2]))*0.35]) # Max value of jaw_clench (1) will be displayed in graph as 0.35
     elif 'concentration' in line_strings[i][1]:
-        cv.append([ms/1000.0, (float(line_strings[i][2]))*0.6]) # Max value of concentration will be displayed in graph as 0.75
+        cv.append([ms/1000.0, (float(line_strings[i][2]))*0.6]) # Max value of concentration will be displayed in graph as 0.6
     elif 'mellow' in line_strings[i][1]:
-        mv.append([ms/1000.0, (float(line_strings[i][2]))*0.6]) # Max value of mellow will be displayed in graph as 0.75
+        mv.append([ms/1000.0, (float(line_strings[i][2]))*0.6]) # Max value of mellow will be displayed in graph as 0.6
     elif ('eeg' in line_strings[i][1]) and not ('quantization' in line_strings[i][1]):
         try:
             eeg.append([float(line_strings[i][2]), float(line_strings[i][3]), float(line_strings[i][4]), float(line_strings[i][5])])
@@ -177,8 +177,8 @@ for i in r_vrange: # Compute mean values for 4 sensors; append to list of values
     gv[i].append((gv[i][1]+gv[i][2]+gv[i][3]+gv[i][4])/4.0) 
 
 
-ut = [du[i][0] for i in np.arange(r_ulen)]
-vt = [dv[i][0] for i in np.arange(r_vlen)]
+ut = [du[i][0] for i in np.arange(r_ulen)] # Absolute values
+vt = [dv[i][0] for i in np.arange(r_vlen)] # Relative values
 
 # Absolute values
 r_du = np.arange(r_ulen)
