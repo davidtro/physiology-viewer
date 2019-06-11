@@ -5,7 +5,7 @@
 Created on Tue Feb 10 06:27:33 2015
 Physiology Viewer release version derived from Phys_74.py Oct 12, 2015
 
-Documentation for using the program can be found at 
+Documentation for using the program can be found at
 http://still-breathing.net/technical-details/ and
 http://still-breathing.net/software/
 
@@ -23,11 +23,7 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as m
 import matplotlib.patches as patches
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from matplotlib.path import Path
-from matplotlib.spines import Spine
-from matplotlib.projections.polar import PolarAxes
-from matplotlib.projections import register_projection
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 #from matplotlib.figure import Figure
 
 from configparser import ConfigParser
@@ -37,20 +33,20 @@ LARGE_FONT = ("Verdana", 12)
 NORM_FONT =  ("Verdana", 10)
 SMALL_FONT = ("Verdana", 18)
 
-graphs = {'d': 'delta', 
-          't': 'theta', 
-          'a': 'alpha', 
-          'b': 'beta', 
+graphs = {'d': 'delta',
+          't': 'theta',
+          'a': 'alpha',
+          'b': 'beta',
           'g': 'gamma',
-          'c': 'concentration', 
+          'c': 'concentration',
           'p': 'breath',
           'v': 'heart',
           's': 'button press',
-          'j': 'jaw clench', 
-          'k': 'blink', 
-          'm': 'mellow', 
+          'j': 'jaw clench',
+          'k': 'blink',
+          'm': 'mellow',
           }
-        
+
 plotlabel = {'d_m':'delta', 'dlb':'delta lb', 'dlf':'delta lf', 'drf':'delta rf', 'drb':'delta rb',
         't_m':'theta', 'tlb':'theta lb', 'tlf':'theta lf', 'trf':'theta rf', 'trb':'theta rb',
         'a_m':'alpha', 'alb':'alpha lb', 'alf':'alpha lf', 'arf':'alpha rf', 'arb':'alpha rb',
@@ -59,7 +55,7 @@ plotlabel = {'d_m':'delta', 'dlb':'delta lb', 'dlf':'delta lf', 'drf':'delta rf'
         's':'button press', 'k':'blink', 'j':'jaw clench', 'c':'concentration', 'm':'mellow', 'v':'heart', 'p':'breath',
         'lb':'raw lb', 'lf':'raw lf', 'rf':'raw rf', 'rb':'raw rb',
         }
-        
+
 plotcolor = {'d_m':'blue', 'dlb':'dodgerblue', 'dlf':'royalblue', 'drf':'cornflowerblue', 'drb':'deepskyblue',
         't_m':'cyan', 'tlb':'turquoise', 'tlf':'aquamarine', 'trf':'paleturquoise', 'trb':'powderblue',
         'a_m':'green', 'alb':'limegreen', 'alf':'mediumseagreen', 'arf':'springgreen', 'arb':'lightgreen',
@@ -68,7 +64,7 @@ plotcolor = {'d_m':'blue', 'dlb':'dodgerblue', 'dlf':'royalblue', 'drf':'cornflo
         's':'black', 'k':'purple', 'j':'crimson', 'c':'goldenrod', 'm':'cadetblue', 'v':'red', 'p':'skyblue',
         'lb':'deeppink', 'lf':'deeppink', 'rf':'deeppink', 'rb':'deeppink',
         }
-        
+
 freqbands = ['delta', 'theta', 'alpha', 'beta', 'gamma']
 locations = [['d_m', 'dlb', 'dlf','drf','drb'],
              ['t_m', 'tlb', 'tlf','trf','trb'],
@@ -86,6 +82,8 @@ g_bands = {'g_m', 'glb', 'glf','grf','grb'}
 cardioresp = {'v':'mv', 'p':'kPa', 's':'ma'}
 
 title_str = ''
+
+fs = 220.0
 
 class WinPsd(Toplevel):
     def __init__(self, master, cnf={}, **kw):
@@ -121,7 +119,7 @@ class WinPsd(Toplevel):
         else:
             ax.set_xlim(0, XMAX)
         ax.set_ylim(YMIN, YMAX)
-        
+
 
         band_patches = [
             patches.Rectangle((0, YMIN), 4, YMAX, facecolor="blue", alpha=0.2),
@@ -148,18 +146,18 @@ class WinPsd(Toplevel):
 
         canvas = FigureCanvasTkAgg(self.fig, master=self)
 
-        toolbar = NavigationToolbar2TkAgg(canvas, self)
+        toolbar = NavigationToolbar2Tk(canvas, self)
         toolbar.update()
         canvas._tkcanvas.pack(fill='both', expand=1)
-        canvas.show()
+        canvas.draw()
 
     def draw(self, xdata, ydata, title_str):
         self.ax.set_title(title_str)
         self.line.set_xdata(xdata)
         self.line.set_ydata(ydata)
         self.fig.canvas.draw()
-        
-   
+
+
 
 """
     d~delta, t~theta, a~alpha, b~beta, g~gamma
@@ -168,7 +166,7 @@ class WinPsd(Toplevel):
     s2 ~ left forehead (FP1)
     s3 ~ right forehead (FP2)
     s4 ~ right ear (TP10)
-    
+
     x ~ swaying left/right x (/acc(2) in column 3)
       ~ rocking forward/back y (/acc(0))
       ~ bouncing up/down z (/acc(1))
@@ -176,125 +174,65 @@ class WinPsd(Toplevel):
     j ~ jaw clench (in column 1)
     c ~ concentration (in column 1)
     m ~ mellow (in column 1)
-    
+
     dlb ~ delta, left, back (column 1)
     dlf ~ delta, left, front (column 2)
     drf ~ delta, right, front (column 3)
     dlf ~ delta, right, back (column 4)
     ...
     grb ~ gamma, right, back
-    
+
     v ~ heart signal (EKG) in mv
     p ~ breath in kPa
     s ~ button press in ma
-    
+
     means ~ numerical mean values and standard deviations for each of four sensors
     medians ~ numerical median values and standard deviations for each of four sensors
-       
+
 """
 
 
-#current_index = 60 #Index for rec33
-#current_index = 51 #Index for rec24
 current_index = 29 #Index for rec1
 
-def radar_factory(num_vars, frame='circle'):
-    # Derived from http://matplotlib.org/examples/api/radar_chart.html
+def update_graph_data():
     """
-    Create a radar chart with `num_vars` axes.
-
-    This function creates a RadarAxes projection and registers it.
-
-    Parameters
-    ----------
-    num_vars : int
-        Number of variables for radar chart.
-    frame : {'circle' | 'polygon'}
-        Shape of frame surrounding axes.
+    Using the values of the checkboxes 'eeg', 'hrt', 'bth' and 'btn',
+    reads data for session index from the corresponding .h5 file and
+    populates the dataframes absolute_df, relative_df, user_df and raw_df,
+    cardio_df, resp_df and button_df.
     """
-    # calculate evenly-spaced axis angles
-    theta = 2*np.pi * np.linspace(0, 1-1./num_vars, num_vars)
-    # rotate theta such that the first axis is at the top
-    # theta += np.pi/2
-    # rotate theta such that left front sensor, lf is at upper left 
-    theta -= np.pi/4
-
-    def draw_poly_patch(self):
-        verts = unit_poly_verts(theta)
-        return plt.Polygon(verts, closed=True, edgecolor='k')
-
-    def draw_circle_patch(self):
-        # unit circle centered on (0.5, 0.5)
-        return plt.Circle((0.5, 0.5), 0.5)
-
-    patch_dict = {'polygon': draw_poly_patch, 'circle': draw_circle_patch}
-    if frame not in patch_dict:
-        raise ValueError('unknown value for `frame`: %s' % frame)
-
-    class RadarAxes(PolarAxes):
-        name = 'radar'
-        # use 1 line segment to connect specified points
-        RESOLUTION = 1
-        # define draw_frame method
-        draw_patch = patch_dict[frame]
-
-        def fill(self, *args, **kwargs):
-            """Override fill so that line is closed by default"""
-            closed = kwargs.pop('closed', True)
-            return super(RadarAxes, self).fill(closed=closed, *args, **kwargs)
-
-        def plot(self, *args, **kwargs):
-            """Override plot so that line is closed by default"""
-            lines = super(RadarAxes, self).plot(*args, **kwargs)
-            for line in lines:
-                self._close_line(line)
-
-        def _close_line(self, line):
-            x, y = line.get_data()
-            #FIXME: markers at x[0], y[0] get doubled-up
-            if x[0] != x[-1]:
-                x = np.concatenate((x, [x[0]]))
-                y = np.concatenate((y, [y[0]]))
-                line.set_data(x, y)
-
-        def set_varlabels(self, labels):
-            self.set_thetagrids(theta * 180/np.pi, labels)
-
-        def _gen_axes_patch(self):
-            return self.draw_patch()
-
-        def _gen_axes_spines(self):
-            if frame == 'circle':
-                return PolarAxes._gen_axes_spines(self)
-            # The following is a hack to get the spines (i.e. the axes frame)
-            # to draw correctly for a polygon frame.
-
-            # spine_type must be 'left', 'right', 'top', 'bottom', or `circle`.
-            spine_type = 'circle'
-            verts = unit_poly_verts(theta)
-            # close off polygon by repeating first vertex
-            verts.append(verts[0])
-            path = Path(verts)
-
-            spine = Spine(self, spine_type, path)
-            spine.set_transform(self.transAxes)
-            return {'polar': spine}
-
-    register_projection(RadarAxes)
-    return theta
-
-def unit_poly_verts(theta):
-    """
-    Return vertices of polygon for subplot axes.
-
-    This polygon is circumscribed by a unit circle centered at (0.5, 0.5)
-    """
-    x0, y0, r = [0.5] * 3
-    verts = [(r*np.cos(t) + x0, r*np.sin(t) + y0) for t in theta]
-    return verts
+    #global relative_df, user_df, raw_df, cardio_df, resp_df
+    global recording
+    global absolute_df, relative_df, user_df, raw_df, cardio_df, resp_df, button_df
+    if 0 < current_index < 29:
+        recording = 'lqt'+str(current_index)
+    elif 29 <= current_index:
+        recording = 'rec'+str(current_index-27)
+    else:
+        print('index out of range')
+    # Reset dataframes to None to clear out residual data from previous selections
+    absolute_df = None
+    relative_df = None
+    user_df = None
+    raw_df = None
+    cardio_df = None
+    resp_df = None
+    button_df = None
+    # Read data from h5 files
+    if str(sessions_df['eeg'][current_index]) == '1':
+        absolute_df = pd.read_hdf(data_path+recording+'_eeg_abs.h5', 'abs_data')
+        relative_df = pd.read_hdf(data_path+recording+'_eeg_rel.h5', 'rel_data')
+        user_df = pd.read_hdf(data_path+recording+'_eeg_user.h5', 'user_data')
+        raw_df = pd.read_hdf(data_path+recording+'_eeg_raw.h5', 'raw_data')
+    if str(sessions_df['hrt'][current_index]) == '1':
+        cardio_df = pd.read_hdf(data_path+recording+'_cardio.h5', 'cardio_data')
+    if str(sessions_df['bth'][current_index]) == '1':
+        resp_df = pd.read_hdf(data_path+recording+'_breath.h5', 'resp_data')
+    if str(sessions_df['btn'][current_index]) == '1':
+        button_df = pd.read_hdf(data_path+recording+'_button.h5', 'btn_data')
 
 class PV(tk.Tk):
-     
+
     Labels = ['Interval', 'ti', 'tf']
     LabelObject = []
     EntryObject = []
@@ -331,7 +269,7 @@ class PV(tk.Tk):
         self.k_scale_var = DoubleVar()
         self.j_offset_var = DoubleVar()
         self.j_scale_var = DoubleVar()
-       
+
         self.duration_var = StringVar()
         self.notes_var = StringVar()
         self.eeg_check_value = IntVar()
@@ -349,14 +287,15 @@ class PV(tk.Tk):
         self.type_average_var = StringVar() # type of average (mean, median, standard deviation, inverse log) in tables
         self.overlay_check_value = IntVar()
         self.loglog_check_value = IntVar()
-    
-        self.interval = IntVar() # integer variable for keeping track 
+
+        self.interval = IntVar() # integer variable for keeping track
         # of radiobutton selected
 
         # Nine rows of StringVar for each selectable radiobutton
         # Row zero is the default interval for the entire session
         # Rows 1-8 are for user-defined intervals
-        # Columns are for interval name, initial time and final time        
+        # Columns are for interval name, initial time and final time
+
         self.sva = [[StringVar(), StringVar(), StringVar()], \
         [StringVar(), StringVar(), StringVar()], \
         [StringVar(), StringVar(), StringVar()], \
@@ -374,7 +313,7 @@ class PV(tk.Tk):
         self.data_type_var['a'].set(1) #initialize data_type_var so that 'a' is selected
         self.data_source_var.set('lb') # initialize data_source as 'lb'
         self.type_average_var.set('mean') # initialize for type of table
-        
+
         self.inipath = '.\\pv.ini'
         self.config = ConfigParser()
         self.config.read(self.inipath)
@@ -392,8 +331,8 @@ class PV(tk.Tk):
             self.config.add_section('button_press')
             self.config.add_section('eye_blink')
             self.config.add_section('jaw_clench')
-                
-        
+
+
         self.abs_offset_var.set(1.667)
         self.abs_scale_var.set(30.0)
         self.c_scale_var.set(1.333)
@@ -401,7 +340,7 @@ class PV(tk.Tk):
         """
         self.v_offset_var.set(0.0)
         self.v_scale_var.set(0.5)
-        self.p_offset_var.set(103.0) # 103 is close to the minimum pressure 
+        self.p_offset_var.set(103.0) # 103 is close to the minimum pressure
         self.p_scale_var.set(0.15)   # range of pressure values is about 6.0
         self.s_offset_var.set(0.5)
         self.s_scale_var.set(0.3)
@@ -412,12 +351,12 @@ class PV(tk.Tk):
         """
         self.overlay_check_value.set(0)
         self.loglog_check_value.set(0)
-        
+
         self.rel_abs_var.set('relative')
         self.med_mean_var.set('median')
 #        self.pack(expand=Y, fill=BOTH) # NECESSARY??
 #        self.master.title('Physiology Viewer') # NECESSARY??
-        
+
 #        self.data_dir_var.set("C:\\MedRec\\")
 #        self.sessions_data_path_var.set("C:\\MedRec\\EEG_CardioRespSessions.xls")
         self.fixed_var = [IntVar(), IntVar(), IntVar(), \
@@ -431,22 +370,22 @@ class PV(tk.Tk):
                          [DoubleVar(), DoubleVar()], \
                          [DoubleVar(), DoubleVar()], \
                          [DoubleVar(), DoubleVar()]]
-        
+
         self.read_settings() # read settings from pv.ini file
-        
+
         try:
             self.load_session_data()
         except:
             print('Failed to load data')
         self._create_viewer_panel()
-    
+
     def get_data_path(self):
         self.data_dir_var.set(askdirectory(\
             initialdir="C:\\MedRec\\", \
             title = "Choose directory where .h5 data files are located."))
-        self.load_session_data() 
+        self.load_session_data()
         # Reload session data from indicated directory
-    
+
     def get_sessions_path(self):
         self.sessions_data_path_var.set(askopenfilename(\
             initialdir="C:\\MedRec\\", \
@@ -459,25 +398,26 @@ class PV(tk.Tk):
         The default directory for .h5 recording data files is C:\MedRec
         The default file name for session data is C:\MedRec\EEG_CardioRespSessions.xls
         """
+        global sessions_df, data_path
         #self.path = self.data_dir_var.get()
         #self.sessions_file = self.sessions_data_path_var.get()
         #self.path = 'C:/MedRec/'
         #self.sessions_file = 'EEG_CardioRespSessions.xls'
         #self.path = dpath
         #self.sessions_file = dfile
-        self.path = self.data_dir_var.get()
+        data_path = self.data_dir_var.get()
         self.sessions_file = self.sessions_data_path_var.get()
         #print('path='+self.path)
         #print('sessions_file='+self.sessions_file)
 #        self.sessions_data = pd.ExcelFile(self.path+self.sessions_file)
         self.sessions_data = pd.ExcelFile(self.sessions_file)
-        self.sessions_df = self.sessions_data.parse('Sheet1', index_col='index', na_values=['None'])
+        sessions_df = self.sessions_data.parse('Sheet1', index_col='index', na_values=['None'])
 #        self.sessions_file.close()
-            
+
     class Spinbox(ttk.Widget):
         def __init__(self, master, **kw):
             ttk.Widget.__init__(self, master, 'ttk::spinbox', kw)
-            
+
     def toggle_spin_widget(self, row, widlist=[]):
         if self.fixed_var[row].get():
             for wid in widlist:
@@ -485,16 +425,16 @@ class PV(tk.Tk):
         else:
             for wid in widlist:
                 wid.configure(state='disabled')
-                
+
     def read_settings(self):
         self.inipath = '.\\pv.ini'
         self.config = ConfigParser()
         self.config.read(self.inipath)
         #print(self.config.get('ts_relative', 'fixed'))
-        
-        self.data_dir_var.set(self.config.get('directory', 'data_dir'))        
-        self.sessions_data_path_var.set(self.config.get('directory', 'sessions_file'))        
-        
+
+        self.data_dir_var.set(self.config.get('directory', 'data_dir'))
+        self.sessions_data_path_var.set(self.config.get('directory', 'sessions_file'))
+
         self.fixed_var[0].set(self.config.get('ts_relative', 'fixed')) #chk2_11
         self.spin_var[0][0].set(0.0) #lbl12
         self.spin_var[0][1].set(self.config.get('ts_relative', 'y_max')) #spb2_13
@@ -522,7 +462,7 @@ class PV(tk.Tk):
         self.fixed_var[6].set(self.config.get('rc_absolute', 'fixed')) #chk2_81
         self.spin_var[6][0].set(0.0) #lbl82
         self.spin_var[6][1].set(self.config.get('rc_absolute', 'y_max')) #spb2_83
-        
+
         self.v_offset_var.set(self.config.get('heart', 'offset'))
         self.v_scale_var.set(self.config.get('heart', 'scale'))
 
@@ -571,7 +511,7 @@ class PV(tk.Tk):
         self.config.set('rc_absolute', 'fixed', str(self.fixed_var[6].get()))
         self.config.set('rc_absolute', 'y_min', '0')
         self.config.set('rc_absolute', 'y_max', str(self.spb2_83.get()))
-        
+
         self.config.set('heart', 'offset', str(self.v_offset_var.get()))
         self.config.set('heart', 'scale', str(self.v_scale_var.get()))
 
@@ -589,243 +529,240 @@ class PV(tk.Tk):
 
         with open(self.inipath, 'w') as f:
            self.config.write(f)
-    
+
     def _create_viewer_panel(self):
         viewerPanel = Frame(self, name='pv')
         viewerPanel.pack(side=TOP, fill=BOTH, expand=Y)
-                 
+
         # create the notebook
         nb = ttk.Notebook(viewerPanel, name='notebook')
- 
+
         # extend bindings to top level window allowing
         #   CTRL+TAB - cycles thru tabs
         #   SHIFT+CTRL+TAB - previous tab
         #   ALT+K - select tab using mnemonic (K = underlined letter)
         nb.enable_traversal()
-         
+
         nb.pack(fill=BOTH, expand=Y, padx=2, pady=3)
 #        self._create_session_tab(nb)
 #        self._create_request_tab(nb)
         self._create_UI_tab(nb)  #NEW
         self._create_Settings_tab(nb)  #NEW
-                                
+
+        self.update_widgets_select()
+        self.update_labels()
+
+    def update_session_data(self, event):
+        """
+        This routine updates the contents of the dataframe sessions_df
+        whenever a new session is selected in the drop-down combobox cbx1
+        on the _create_UI_tab.
+        """
+        global current_index, sessions_df
+        current_index =  self.cbx1.current()
+        #print('current_index = '+str(current_index))
+        self.index_var.set(current_index)
+        self.recording_var.set(sessions_df.iloc[current_index]['recording'])
+        self.session_title_var.set(sessions_df.iloc[current_index]['title'])
+        self.person_var.set(sessions_df.iloc[current_index]['person'])
+        self.subject_var.set(sessions_df.iloc[current_index]['subject'])
+        self.date_time_var.set(sessions_df.iloc[current_index]['date_time'])
+        self.duration_var.set(sessions_df.iloc[current_index]['duration'])
+        notes = sessions_df['notes'][self.index_var.get()]
+        self.txt1.delete(1.0, END) # Delete from line 1, character 0 to end of text
+        self.txt1.insert(END, notes)
+        self.eeg_check_value.set(sessions_df.iloc[current_index]['eeg'])
+        self.heart_check_value.set(sessions_df.iloc[current_index]['hrt'])
+        self.breath_check_value.set(sessions_df.iloc[current_index]['bth'])
+        self.button_check_value.set(sessions_df.iloc[current_index]['btn'])
+        self.labquest_sample_rate_var.set(sessions_df.iloc[current_index]['Hz'])
+        self.muse_sample_rate_var.set(220)
+        #print('\ncurrent_index=', current_index)
+        #print('eeg_check_value=', self.eeg_check_value.get())
+        #print('heart_check_value=', self.heart_check_value.get())
+        #print('breath_check_value=', self.breath_check_value.get())
+        #print('button_check_value=', self.button_check_value.get())
+        #interval1 = str(self.interval1_var.get())
+        #print('interval1 = '+str(interval1))
+        self.sva[0][0].set('entire session') # Initial line is
+        # initialized with ti=0, tf=duration
+        self.sva[0][1].set('0')
+        self.sva[0][2].set(self.duration_var.get())
+        for i in range(1,9): # fill in user-defined intervals in rows 1-8
+            #print('i = '+str(i))
+            #print('current_index = '+str(current_index))
+            self.sva[i][0].set(sessions_df.iloc[current_index]['interval'+str(i)])
+            self.sva[i][1].set(sessions_df.iloc[current_index]['ti'+str(i)])
+            self.sva[i][2].set(sessions_df.iloc[current_index]['tf'+str(i)])
+
+
+        #print(self.notes_var.get())
+        #print('self in update_session_data=', self)
+        update_graph_data() #routine is OUTSIDE of PV class, so does not require self.
+        self.update_labels() #Make sure that labels for EEG, Heart, Breath and Button are up to date
+        self.update_widgets_select() # Make sure that widgets (e.g. widSrc, widBands) are up to date
+
+
+    def update_notes(self, notes):
+        sessions_df.set(current_index, 'notes', notes)
+        #print(notes)
+
+    def update_widgets_select(self):
+        """
+        Enables or disables widgets according to values in spreadsheet columns eeg, hrt, bth, btn
+        when selection is made in drop-down list of sessions
+        """
+        #print('\nin update_widgets_select')
+        #print('self.eeg_check_value=', self.eeg_check_value.get())
+        self.graph_type_var.set('timeseries') # default radio button selection is for rdo1 (Time Series)
+        for x in self.data_type_var:
+            self.data_type_var[x].set(0) #initialize data_type_var to unchecked
+        self.data_type_var['a'].set(1) #initialize data_type_var so that 'a' is selected
+
+        self.disable_widget(self.widProprietary) # Postpone implementation of proprietary data 'c' and 'm'
+        if self.eeg_check_value.get(): # EEG data exists
+            self.enable_widget(self.widEEG)
+            self.enable_widget(self.widEEGonly)
+            self.enable_widget(self.widDisplay)
+        else: # EEG data does not exist
+            self.disable_widget(self.widEEG)
+            self.disable_widget(self.widEEGonly)
+        if self.heart_check_value.get(): # heart data exists
+            self.enable_widget(self.widHeart)
+            self.enable_widget(self.widDisplay)
+        else: # heart data does not exist
+            self.disable_widget(self.widHeart)
+        if self.breath_check_value.get(): # breath data exists
+            self.enable_widget(self.widBreath)
+            self.enable_widget(self.widDisplay)
+        else: # breath data does not exist
+            self.disable_widget(self.widBreath)
+            self.disable_widget(self.widOverlay)
+            self.overlay_check_value.set(0) # be sure the Overlay checkbox in unchecked if there is no breath data
+        if self.button_check_value.get(): # button data exists
+            self.enable_widget(self.widButton)
+            self.enable_widget(self.widDisplay)
+        else: # button data does not exist
+            self.disable_widget(self.widButton)
+
+    def update_widgets_click(self):
+        """
+        Enables or disables widgets based on which chart type is clicked:
+        timeseries, spectrogram, psd, raw, radar or table
+        """
+        graph = self.graph_type_var.get()
+        #print('\nin update_widgets_click')
+        #print('graph=', graph)
+        if graph == 'timeseries':
+            self.enable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc|self.widDisplay)
+            self.disable_widget(self.widOverlay|self.widLogLog|self.widTabletype)
+            if self.breath_check_value.get(): # breath data exists
+                self.enable_widget(self.widBreath)
+            else: # breath data does not exist
+                self.disable_widget(self.widBreath)
+            if self.heart_check_value.get(): # heart data exists
+                self.enable_widget(self.widHeart)
+                self.enable_widget(self.widDisplay)
+            else: # heart data does not exist
+                self.disable_widget(self.widHeart)
+            if self.button_check_value.get(): # button data exists
+                self.enable_widget(self.widButton)
+                self.enable_widget(self.widDisplay)
+            else: # button data does not exist
+                self.disable_widget(self.widButton)
+        elif graph == 'spectrogram':
+            if self.breath_check_value.get(): # breath data exists
+                self.enable_widget(self.widOverlay|self.widSrc|self.widDisplay)
+                self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widpvs|self.widLogLog|self.widTabletype)
+            else: # Prevent use of Overlay checkbox when no breath data exists
+                self.disable_widget(self.widOverlay)
+        elif graph == 'psd':
+            self.enable_widget(self.widLogLog|self.widSrc|self.widDisplay)
+            self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widpvs|self.widOverlay|self.widTabletype)
+        elif graph == 'raweeg':
+            self.enable_widget(self.widRelAbs|self.widMedMean|self.widSrc|self.widDisplay)
+            self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widLogLog|self.widOverlay|self.widTabletype)
+        elif graph == 'radar':
+            self.enable_widget(self.widRelAbs|self.widDisplay)
+            # We don't bother with median values for radar chart
+            self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc|self.widpvs|self.widTabletype)
+        elif graph == 'table':
+            self.enable_widget(self.widRelAbs|self.widTabletype|self.widDisplay)
+            self.disable_widget(self.widRelAbs|self.widBands|self.widSrc|self.widUser|self.widMedMean|self.widpvs|self.widLogLog|self.widOverlay)
+
+
+    def update_labels(self):
+        """
+        Uses values in columns eeg, hrt, bth and btn of the EEG_CardioRespSessions.xls
+        spreadsheet to set the labels to the right of the session description:
+        EEG (220 Hz), Heart (220 Hz), Breath (220 Hz) and Button (220 Hz)
+        """
+        #print('\nentering update_labels')
+        #print('eeg_check_value=', self.eeg_check_value.get())
+        #print('heart_check_value=', self.heart_check_value.get())
+        #print('breath_check_value=', self.breath_check_value.get())
+        #print('button_check_value=', self.button_check_value.get())
+        if self.eeg_check_value.get():
+            self.eeg_label.set(' EEG ('+str(self.muse_sample_rate_var.get())+' Hz)')
+        else:
+            self.eeg_label.set('')
+        if self.heart_check_value.get():
+            self.heart_label.set(' Heart ('+str(self.labquest_sample_rate_var.get())+' Hz)')
+        else:
+            self.heart_label.set('')
+        if self.breath_check_value.get():
+            self.breath_label.set(' Breath ('+str(self.labquest_sample_rate_var.get())+' Hz)')
+        else:
+            self.breath_label.set('')
+        if self.button_check_value.get():
+            self.button_label.set(' Button ('+str(self.labquest_sample_rate_var.get())+' Hz)')
+        else:
+            self.button_label.set('')
+        #print('eeg_label=', self.eeg_label.get())
+        #print('heart_label=', self.heart_label.get())
+        #print('breath_label=', self.breath_label.get())
+        #print('button_label=', self.button_label.get())
 
     def _create_UI_tab(self, nb):
         """
         Creates the Main user interface (UI) tab in the Physiology Viewer.
         """
         self.widEEG = {}
-        
-        def update_session_data(event):
-            """ 
-            This routine updates the contents of the dataframe sessions_df
-            whenever a new session is selected in the drop-down combobox cbx1
-            on the _create_UI_tab.
-            """
-            global current_index
-            current_index =  self.cbx1.current()
-            #print('current_index = '+str(current_index))
-            self.index_var.set(current_index)
-            self.recording_var.set(self.sessions_df.ix[current_index]['recording'])
-            self.session_title_var.set(self.sessions_df.ix[current_index]['title'])
-            self.person_var.set(self.sessions_df.ix[current_index]['person'])
-            self.subject_var.set(self.sessions_df.ix[current_index]['subject'])
-            self.date_time_var.set(self.sessions_df.ix[current_index]['date_time'])
-            self.duration_var.set(self.sessions_df.ix[current_index]['duration'])
-            notes = self.sessions_df['notes'][self.index_var.get()]
-            self.txt1.delete(1.0, END) # Delete from line 1, character 0 to end of text
-            self.txt1.insert(END, notes)
-            self.eeg_check_value.set(self.sessions_df.ix[current_index]['eeg'])
-            self.heart_check_value.set(self.sessions_df.ix[current_index]['hrt'])
-            self.breath_check_value.set(self.sessions_df.ix[current_index]['bth'])
-#            self.button_check_value.set(self.sessions_df.ix[current_index]['btn'])
-            self.labquest_sample_rate_var.set(self.sessions_df.ix[current_index]['Hz'])
-            self.muse_sample_rate_var.set(220)
-            #print('current_index=', current_index)
-            #print('eeg_check_value=', self.eeg_check_value.get())
-            #print('heart_check_value=', self.heart_check_value.get())
-            #print('breath_check_value=', self.breath_check_value.get())
-            update_widgets()
-            update_labels()
-    #        interval1 = str(self.interval1_var.get())
-    #        print('interval1 = '+str(interval1))
-            self.sva[0][0].set('entire session') # Initial line is 
-            # initialized with ti=0, tf=duration
-            self.sva[0][1].set('0')
-            duration = self.duration_var.get()
-            self.sva[0][2].set(duration)
-            for i in range(1,9): # fill in user-defined intervals in rows 1-8
-                #print('i = '+str(i))
-                #print('current_index = '+str(current_index))
-                self.sva[i][0].set(self.sessions_df.ix[current_index]['interval'+str(i)])
-                self.sva[i][1].set(self.sessions_df.ix[current_index]['ti'+str(i)])
-                self.sva[i][2].set(self.sessions_df.ix[current_index]['tf'+str(i)])
-    
-            
-            print(self.notes_var.get())
-            update_graph_data(current_index)
-            
-        def update_graph_data(index):
-            """
-            Using the values of the checkboxes 'eeg', 'hrt', 'bth' and 'btn',
-            reads data for session index from the corresponding .h5 file and 
-            populates the dataframes absolute_df, relative_df, user_df and raw_df,
-            cardio_df, resp_df and button_df.
-            """
-            global recording, sessions_df
-    #        global relative_df, user_df, raw_df, cardio_df, resp_df
-            if 0 < index < 29:
-                recording = 'lqt'+str(index)
-            elif 29 <= index:
-                recording = 'rec'+str(index-27)
-            else:
-                print('index out of range')
-            #print('recording='+recording)
-            
-            # Reset dataframes to None to clear out residual data from previous selections
-            self.absolute_df = None
-            self.relative_df = None
-            self.user_df = None
-            self.raw_df = None
-            self.cardio_df = None
-            self.resp_df = None
-            self.button_df = None
-            
-            # Read data from files indicated as existent by checkboxes
-            if str(self.sessions_df['eeg'][index]) == '1':
-                self.absolute_df = pd.read_hdf(self.path+recording+'_eeg_abs.h5', 'abs_data')
-                self.relative_df = pd.read_hdf(self.path+recording+'_eeg_rel.h5', 'rel_data')
-                self.user_df = pd.read_hdf(self.path+recording+'_eeg_user.h5', 'user_data')
-                self.raw_df = pd.read_hdf(self.path+recording+'_eeg_raw.h5', 'raw_data')
-                nsamples = len(self.raw_df)
-                self.fs = 220.0
-                timeseries = np.arange(nsamples)/self.fs
-                self.raw_df.insert(0, 't', pd.Series(timeseries, index=self.raw_df.index))
-            if str(self.sessions_df['hrt'][index]) == '1':
-                self.cardio_df = pd.read_hdf(self.path+recording+'_cardio.h5', 'cardio_data')
-            if str(self.sessions_df['bth'][index]) == '1':
-                self.resp_df = pd.read_hdf(self.path+recording+'_breath.h5', 'resp_data')
-            if str(self.sessions_df['btn'][index]) == '1':
-                self.button_df = pd.read_hdf(self.path+recording+'_button.h5', 'btn_data')
-    
-        def update_notes(notes):
-            self.sessions_df.set(current_index, 'notes', notes)
-            print(notes)
-            
-        def update_widgets():
-#            print('in update_widgets')
-            graph = self.graph_type_var.get()
-            if self.eeg_check_value.get(): # EEG data exists
-                if graph == 'timeseries':
-                    self.enable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)
-                    self.widOverlay.configure(state='disabled')
-                elif graph == 'spectrogram':
-                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
-                    self.enable_widget(self.widSrc)
-                    self.widOverlay.configure(state='normal')
-                elif graph == 'psd':
-                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
-                    self.enable_widget(self.widSrc)
-                    self.widOverlay.configure(state='disabled')
-                elif graph == 'raweeg':
-                    self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean)
-                    self.enable_widget(self.widSrc)
-                    self.widOverlay.configure(state='disabled')
-                elif graph == 'radar':
-                    self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
-                    self.enable_widget(self.widRelAbs)
-                    self.widOverlay.configure(state='disabled')
-                elif graph == 'table':
-                    self.disable_widget(self.widBands|self.widUser|self.widMedMean|self.widSrc)
-                    self.enable_widget(self.widRelAbs)
-                    self.widOverlay.configure(state='disabled')
-            else: # EEG data does not exist
-                self.disable_widget(self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc)                
-                self.uncheck_data_source_widgets(['d', 't', 'a', 'b', 'g', 'c', 'm', 'j', 'k', 's'])
-            if self.heart_check_value.get(): # heart data exists
-                if graph == 'timeseries':
-                    self.widHeart.configure(state='normal')
-                else:
-                    self.widHeart.configure(state='disabled')
-            else: # heart data does not exist
-                self.widHeart.configure(state='disabled')
-                self.uncheck_data_source_widgets(['v']) # EEG bands do not apply
-            if self.breath_check_value.get(): # breath data exists
-                self.widOverlay.configure(state='normal')
-                if graph == 'timeseries':
-                    self.widBreath.configure(state='normal')
-                else:
-                    self.widBreath.configure(state='disabled')
-            else: # breath data does not exist
-                self.widOverlay.configure(state='disabled')
-                self.widBreath.configure(state='disabled')
-                self.uncheck_data_source_widgets(['p']) # EEG bands do not apply
-            if self.breath_check_value.get(): # button data exists
-                if graph == 'timeseries':
-                    self.widButton.configure(state='normal')
-                else:
-                    self.widButton.configure(state='disabled')
-            else: # button data does not exist
-                self.widButton.configure(state='disabled')
-                self.uncheck_data_source_widgets(['s']) # EEG bands do not apply
-                    
-                
-        def update_labels():
-            #print('entering update_labels')
-            #print('heart_check_value=', self.heart_check_value.get())
-            if self.eeg_check_value.get():
-                self.eeg_label.set(' EEG ('+str(self.muse_sample_rate_var.get())+' Hz)')
-            else:
-                self.eeg_label.set('')
-            if self.heart_check_value.get():
-                self.heart_label.set(' Heart ('+str(self.labquest_sample_rate_var.get())+' Hz)')
-            else:
-                self.heart_label.set('')
-            if self.breath_check_value.get():
-                self.breath_label.set(' Breath ('+str(self.labquest_sample_rate_var.get())+' Hz)')
-            else:
-                self.breath_label.set('')
-            if self.button_check_value.get():
-                self.button_label.set(' Button ('+str(self.labquest_sample_rate_var.get())+' Hz)')
-            else:
-                self.button_label.set('')
-            #print('heart_label=',self.heart_label.get())
-            
+
         # frame to hold contentx
         self.frame = ttk.Frame(nb, height='10i', width='8i', name='main')
         # widgets to be displayed on 'Session' tab
-        lbl0 = ttk.Label(self.frame, textvariable=self.session_title_var, width=40, font=("Helvetica", 16))    
+        lbl0 = ttk.Label(self.frame, textvariable=self.session_title_var, width=40, font=("Helvetica", 16))
         lbl0.grid(row=0, column=0, columnspan=3, sticky=N)
 
         self.cbx1 = ttk.Combobox(self.frame, width=80, textvariable=self.title_var, state='readonly')
 #        self.cbx1 = ttk.Combobox(self.frame, width=50, textvariable=self.person_title_var, state='readonly')
-#        date_time = self.sessions_df.ix[current_index]['date_time']
-#        sessions_list = self.sessions_df['recording'] + ' - ' + str('{0:%Y-%m-%d}'.format(date_time)) + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
-#        sessions_list = self.sessions_df['recording'] + ' - ' + '{0:%Y-%m-%d}'.format(self.sessions_df['date_time']) + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
-#        date_time = self.sessions_df.ix[current_index]['date_time']
-#        sessions_list = self.sessions_df['recording'] + ' - ' + self.sessions_df['person'] + ' - ' + self.sessions_df['title']
+#        date_time = sessions_df.iloc[current_index]['date_time']
+#        sessions_list = sessions_df['recording'] + ' - ' + str('{0:%Y-%m-%d}'.format(date_time)) + ' - ' + sessions_df['person'] + ' - ' + sessions_df['title']
+#        sessions_list = sessions_df['recording'] + ' - ' + '{0:%Y-%m-%d}'.format(sessions_df['date_time']) + ' - ' + sessions_df['person'] + ' - ' + sessions_df['title']
+#        date_time = sessions_df.iloc[current_index]['date_time']
+#        sessions_list = sessions_df['recording'] + ' - ' + sessions_df['person'] + ' - ' + sessions_df['title']
 #        print(sessions_list[100])
 #        print('\n---\n')
-#        print(self.sessions_df['date_time'])
-#        print('{0:%Y-%m-%d}'.format(self.sessions_df.ix[100]['date_time']))
-#        print('# of lines = ', len(self.sessions_df))
-        sessions_list = [str(self.sessions_df['recording'][i]) + ' - ' + \
-                         str(self.sessions_df['date_time'][i]) + ' - ' + \
-                         str(self.sessions_df['person'][i]) + ' - ' + \
-                         str(self.sessions_df['title'][i])
-                         for i in range(len(self.sessions_df))]
+#        print(sessions_df['date_time'])
+#        print('{0:%Y-%m-%d}'.format(sessions_df.iloc[100]['date_time']))
+#        print('# of lines = ', len(sessions_df))
+        sessions_list = [str(sessions_df['recording'][i]) + ' - ' + \
+                         str(sessions_df['date_time'][i]) + ' - ' + \
+                         str(sessions_df['person'][i]) + ' - ' + \
+                         str(sessions_df['title'][i])
+                         for i in range(len(sessions_df))]
         self.cbx1['values'] = [row for row in sessions_list]
         self.cbx1.current(29) # Sets current value to first session involving brain waves
-        self.cbx1.bind("<<ComboboxSelected>>", update_session_data)
+        self.cbx1.bind("<<ComboboxSelected>>", self.update_session_data)
         self.cbx1.grid(row=1, column=0, columnspan=3, sticky=W)
-        
+
         self.txt1 = Text(self.frame, height=10, wrap=tk.WORD)
-        notes = self.sessions_df['notes'][self.index_var.get()]
+        notes = sessions_df['notes'][self.index_var.get()]
         self.txt1.insert(END, notes)
         self.txt1.grid(row=2, column=0, rowspan=4, columnspan=4, sticky=(N,S,E,W))
         self.notes_var.trace("w", lambda name, index, mode, notes_var=self.notes_var: self.update_notes(notes))
 #        print(txt1.get(1))
-
         lbl1 = ttk.Label(self.frame, textvariable=self.eeg_label, width=15)
         lbl1.grid(row=2, column=4, sticky=(N,W))
         lbl2 = ttk.Label(self.frame, textvariable=self.heart_label, width=15)
@@ -835,16 +772,16 @@ class PV(tk.Tk):
         lbl7 = ttk.Label(self.frame, textvariable=self.button_label, width=15)
         lbl7.grid(row=5, column=4, sticky=(N,W))
 
-        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: update_widgets())
-        rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: update_widgets())
-        rdo3 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd', command=lambda: update_widgets())
-        rdo4 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg', command=lambda: update_widgets())
-        rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: update_widgets())
-        rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: update_widgets())
+        rdo1 = ttk.Radiobutton(self.frame, text='Time Series', variable=self.graph_type_var, value='timeseries', command=lambda: self.update_widgets_click())
+        rdo2 = ttk.Radiobutton(self.frame, text='Spectrogram', variable=self.graph_type_var, value='spectrogram', command=lambda: self.update_widgets_click())
+        rdo3 = ttk.Radiobutton(self.frame, text='PSD vs Frequency', variable=self.graph_type_var, value='psd', command=lambda: self.update_widgets_click())
+        rdo4 = ttk.Radiobutton(self.frame, text='Raw EEG', variable=self.graph_type_var, value='raweeg', command=lambda: self.update_widgets_click())
+        rdo5 = ttk.Radiobutton(self.frame, text='Radar Chart', variable=self.graph_type_var, value='radar', command=lambda: self.update_widgets_click())
+        rdo6 = ttk.Radiobutton(self.frame, text='Table', variable=self.graph_type_var, value='table', command=lambda: self.update_widgets_click())
 
         chk13 = ttk.Checkbutton(self.frame, text='Overlay breath', variable=self.overlay_check_value)
         chk14 = ttk.Checkbutton(self.frame, text='Log-log plot', variable=self.loglog_check_value)
-        
+
         rdo1.grid(row=6, column=0, sticky=W)
         rdo2.grid(row=8, column=0, sticky=W)
         rdo3.grid(row=9, column=0, sticky=W)
@@ -866,7 +803,7 @@ class PV(tk.Tk):
         chk10 = ttk.Checkbutton(frm1, text='j ', variable=self.data_type_var['j'])
         chk11 = ttk.Checkbutton(frm1, text='k', variable=self.data_type_var['k'])
         chk12 = ttk.Checkbutton(frm1, text='s', variable=self.data_type_var['s'])
-        
+
         chk1.grid(row=0, column=0)
         chk2.grid(row=0, column=1)
         chk3.grid(row=0, column=2)
@@ -879,7 +816,7 @@ class PV(tk.Tk):
         chk10.grid(row=1, column=3)
         chk11.grid(row=1, column=4)
         chk9.grid(row=1, column=5)
-        
+
         chk13.grid(row=8, column=1, sticky=W)
         chk14.grid(row=9, column=1, sticky=W)
 
@@ -930,7 +867,7 @@ class PV(tk.Tk):
 
         frm411 = ttk.Frame(frm4, borderwidth=2, width=20) # frame for head graphic,...
         frm411.grid(row=1, column=1, sticky=(N,S,E,W))
-        
+
         can = Canvas(frm411, width=55, height=55)
         can.grid()
         can.create_oval(5, 7, 50, 52, fill="blanched almond") # scalp
@@ -992,35 +929,33 @@ Muse proprietary:\n\
 
         btn1 = ttk.Button(frm2, text='Save', command=self.save_session_data)
         btn1.grid(row=14, column=2, columnspan=2)
-        
+
 #        self.frame.rowconfigure(1, weight=1)
 #        self.frame.columnconfigure((0,1), weight=1, uniform=1)
-         
+
         # add to notebook (underline = index for short-cut character)
         nb.add(self.frame, text='Main', underline=0, padding=2)
-        
+
+        self.widDisplay = {btn0}
+        self.widEEGonly = {rdo2, rdo3, rdo4, rdo5, rdo6}
         self.widBands = {chk1, chk2, chk3, chk4, chk5}
-        self.widUser = {chk8, chk9, chk10, chk11}
+        self.widUser = {chk10, chk11}
+        self.widProprietary = {chk8, chk9}
+        self.widBreath = {chk6}
+        self.widHeart = {chk7}
+        self.widButton = {chk12}
+        self.widpvs = {chk6, chk7, chk12}
         self.widRelAbs = {rdo20, rdo21}
         self.widMedMean = {rdo22, rdo23}
+        self.widOverlay = {chk13}
+        self.widLogLog = {chk14}
+        self.widTabletype = {cbx2}
+        self.widAccessory = {chk13, chk14, cbx2}
         self.widSrc = {rdo11, rdo12, rdo13, rdo14}
-#        self.widSrc = {rdo11, rdo12, rdo13, rdo14, rdo15, rdo16, rdo17, rdo18, rdo19}
-        self.widBreath = chk6
-        self.widHeart = chk7
-        self.widButton = chk12
-        self.widOverlay = chk13
+        self.widEEG = self.widBands|self.widUser|self.widRelAbs|self.widMedMean|self.widSrc|self.widAccessory
 
-        update_session_data(self) # Causes update even when do combobox selection has been made
-        
-    def uncheck_data_source_widgets(self, srclist):
-        """
-        When EEG, heart or breath data do not exist, uncheck corresponding data source checkboxes
-        (to prevent draw_graph routine from trying to plot missing data)
-        """
-        for x in srclist:
-            self.data_type_var[x].set(0)
+        self.update_session_data(self) # Causes update even when no combobox selection has been made
 
-                
     def disable_widget(self, widset):
         for wid in widset:
             wid.configure(state='disabled')
@@ -1044,28 +979,28 @@ Muse proprietary:\n\
         frm2 = ttk.Frame(self.frame, borderwidth=2)
         heading3 = ttk.Label(self.frame, text='Incidental Scale and Offset', font=("Helvetica", 14), padding=15)
         frm3 = ttk.Frame(self.frame, borderwidth=2)
-        
+
         heading1.grid(row=1, column=0)
         frm1.grid(row=2, column=0, sticky=W)
         heading2.grid(row=3, column=0)
         frm2.grid(row=4, column=0, sticky=W)
         heading3.grid(row=5, column=0)
         frm3.grid(row=6, column=0, sticky=W)
-        
+
         lbl1_00 = ttk.Label(frm1, width=20, text='Data file directory')
         etr1_10 = ttk.Entry(frm1, width=90, textvariable=self.data_dir_var)
         btn1_11 = ttk.Button(frm1, text='Open', command=self.get_data_path)
         lbl1_02 = ttk.Label(frm1, width=20, text='Sessions data file')
         etr1_30 = ttk.Entry(frm1, width=90, textvariable=self.sessions_data_path_var)
         btn1_31 = ttk.Button(frm1, text='Open', command=self.get_sessions_path)
-        
+
         lbl1_00.grid(row=0, column=0, sticky=W)
         etr1_10.grid(row=1, column=0, sticky=W)
         btn1_11.grid(row=1, column=1, sticky=W)
         lbl1_02.grid(row=2, column=0, sticky=W)
         etr1_30.grid(row=3, column=0, sticky=W)
         btn1_31.grid(row=3, column=1, sticky=W)
-        
+
         self.lbl2_00 = ttk.Label(frm2, width=20, text='Time Series')
         self.lbl2_01 = ttk.Label(frm2, width=8, text='Fixed')
         self.lbl2_02 = ttk.Label(frm2, width=7, text='Min y', justify=LEFT)
@@ -1078,7 +1013,7 @@ Muse proprietary:\n\
         self.chk2_11 = ttk.Checkbutton(frm2, variable=self.fixed_var[0], \
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(0, [self.spb2_13]))
-        self.toggle_spin_widget(0, [self.spb2_13])  
+        self.toggle_spin_widget(0, [self.spb2_13])
 
         self.lbl2_20 = ttk.Label(frm2, width=10, text='absolute')
         opts22 = { 'from': -2.0, 'to': 0.0, 'increment': 0.1, 'state': 'disabled'}
@@ -1088,7 +1023,7 @@ Muse proprietary:\n\
         self.chk2_21 = ttk.Checkbutton(frm2, variable=self.fixed_var[1], \
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(1, [self.spb2_22, self.spb2_23]))
-        self.toggle_spin_widget(1, [self.spb2_22, self.spb2_23])  
+        self.toggle_spin_widget(1, [self.spb2_22, self.spb2_23])
 
         self.lbl2_30 = ttk.Label(frm2, width=20, text='Spectrogram')
         self.lbl2_32 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
@@ -1098,7 +1033,7 @@ Muse proprietary:\n\
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(2, [self.spb2_33]))
         self.toggle_spin_widget(2, [self.spb2_33])
-            
+
         self.lbl2_40 = ttk.Label(frm2, width=20, text='PSD vs. Frequency')
         opts42 = { 'from': 0, 'to': 0, 'increment': 0.1, 'state': 'disabled'}
         self.spb2_42 = tk.Spinbox(frm2, textvariable=self.spin_var[3][0], **opts42)
@@ -1108,7 +1043,7 @@ Muse proprietary:\n\
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(3, [self.spb2_42, self.spb2_43]))
         self.toggle_spin_widget(3, [self.spb2_42, self.spb2_43])
-            
+
         self.lbl2_50 = ttk.Label(frm2, width=10, text='Raw EEG')
         opts52 = { 'from': 0, 'to': 800, 'increment': 100, 'state': 'disabled'}
         self.spb2_52 = tk.Spinbox(frm2, textvariable=self.spin_var[4][0], **opts52)
@@ -1118,9 +1053,9 @@ Muse proprietary:\n\
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(4, [self.spb2_52, self.spb2_53]))
         self.toggle_spin_widget(4, [self.spb2_52, self.spb2_53])
-        
+
         self.lbl2_60 = ttk.Label(frm2, width=20, text='Radar Chart')
-        
+
         self.lbl2_70 = ttk.Label(frm2, width=10, text='relative')
         self.lbl2_72 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
         opts73 = { 'from': 0, 'to': 1.0, 'increment': 0.1, 'state': 'disabled'}
@@ -1129,7 +1064,7 @@ Muse proprietary:\n\
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(5, [self.spb2_73]))
         self.toggle_spin_widget(5, [self.spb2_73])
-        
+
         self.lbl2_80 = ttk.Label(frm2, width=10, text='absolute')
         self.lbl2_82 = ttk.Label(frm2, width=5, text='0', justify=CENTER)
         opts83 = { 'from': 0, 'to': 100, 'increment': 10, 'state': 'disabled'}
@@ -1138,7 +1073,7 @@ Muse proprietary:\n\
             onvalue=1, offvalue=0, \
             command=lambda: self.toggle_spin_widget(6, [self.spb2_83]))
         self.toggle_spin_widget(6, [self.spb2_83])
-        
+
         self.btn83 = ttk.Button(self.frame, text='Save Settings', command=self.save_settings)
 
         self.lbl2_00.grid(row=0, column=0)
@@ -1165,26 +1100,26 @@ Muse proprietary:\n\
         self.chk2_41.grid(row=4, column=1)
         self.spb2_42.grid(row=4, column=2)
         self.spb2_43.grid(row=4, column=3)
-        
+
         self.lbl2_50.grid(row=5, column=0, sticky=W)
         self.chk2_51.grid(row=5, column=1)
         self.spb2_52.grid(row=5, column=2)
         self.spb2_53.grid(row=5, column=3)
-        
+
         self.lbl2_60.grid(row=6, column=0, sticky=W)
-        
+
         self.lbl2_70.grid(row=7, column=0)
         self.chk2_71.grid(row=7, column=1)
         self.lbl2_72.grid(row=7, column=2)
         self.spb2_73.grid(row=7, column=3)
-        
+
         self.lbl2_80.grid(row=8, column=0)
         self.chk2_81.grid(row=8, column=1)
         self.lbl2_82.grid(row=8, column=2)
         self.spb2_83.grid(row=8, column=3)
-        
+
         self.btn83.grid(row=9, column=0, sticky=E)
-        
+
         lbl3_01 = ttk.Label(frm3, width=20, text='Heart')
         lbl3_03 = ttk.Label(frm3, width=20, text='Breath')
         lbl3_05 = ttk.Label(frm3, width=20, text='Button Press')
@@ -1238,19 +1173,27 @@ Muse proprietary:\n\
         etr3_51.grid(row=5, column=1, sticky=W)
         lbl3_52.grid(row=5, column=2)
         etr3_53.grid(row=5, column=3)
-        
-        
+
+    def __str__(self):
+        return '[current_index, recording: %s, %s]' % (current_index, recording)
+#        return '[current_index: %s]' % (current_index)
+        #return '[sessions_file: %s]' % (self.sessions_file)
+        #int_value = self.interval.get() # int_value represents the currently selected radiobutton
+        #return '[ti, tf: %s %s]' % (float(pv.self.sva[int_value][1].get()), float(pv.self.sva[int_value][2].get()))
+        #current_index = self.cbx1.current()
+        #return '[sessions_df: %s]' % (sessions_df.iloc[current_index])
+
     def draw_spectrogram(self):
         popup = tk.Tk()
         popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Spectrogram")
         p = plt.figure()
         self.ax = plt.subplot(111)
-        # In preparation for plotting, get the current radiobutton selection and the 
-        # corresponding initial and final times of the interval        
+        # In preparation for plotting, get the current radiobutton selection and the
+        # corresponding initial and final times of the interval
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         #print('int_value = '+str(int_value))
-        
+
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
         r = self.data_source_var.get()
@@ -1262,12 +1205,12 @@ Muse proprietary:\n\
 # be a loop.
 #        item_list = list(self.data_type_var.items())
 #        for pair in item_list:
-#            if pair[1].get(): # if the corresponding checkbox is checked        
-        #                    Pxx, freqs, bins, im = self.ax.specgram(self.raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
-        i = int(ti*self.fs)
-        f = int(tf*self.fs)
-        i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
-        signal = self.raw_df[r][i_range]
+#            if pair[1].get(): # if the corresponding checkbox is checked
+        #                    Pxx, freqs, bins, im = self.ax.specgram(raw_df[spect[d]],NFFT=256,Fs=220) # E.g., request 's1' --> key 'lb'
+        i = int(ti*fs)
+        f = int(tf*fs)
+        i_range = np.logical_and(i < raw_df.index, raw_df.index < f)
+        signal = raw_df[r][i_range]
         Pxx, freqs, bins, im = self.ax.specgram(signal, NFFT=1024, noverlap=512, Fs=220, xextent=(ti,tf))
         #plt.ylim(0,55) # cutoff frequency less than 60 Hz which is due to AC power contamination
         if self.fixed_var[2].get() == 1:
@@ -1279,12 +1222,12 @@ Muse proprietary:\n\
         if self.overlay_check_value.get()==0: # Only display colorbar when not overlaying breath
             cb = p.colorbar(im, shrink=0.9, pad=0.02)
             cb.set_label('Intensity (dB)')
-        
-        recording = self.sessions_df.ix[current_index]['recording']
-        title = self.sessions_df.ix[current_index]['title']
-        subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+
+        recording = sessions_df.iloc[current_index]['recording']
+        title = sessions_df.iloc[current_index]['title']
+        subject = sessions_df.iloc[current_index]['subject']
+        duration = sessions_df.iloc[current_index]['duration']
+        date_time = sessions_df.iloc[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -1297,16 +1240,16 @@ Muse proprietary:\n\
 
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width, box.height*0.95])
-        
+
         if self.overlay_check_value.get():
             ax2 = self.ax.twinx()
             ax2.set_ylim(0,1)
             ax2.set_ylabel('breath', color='blue')
             ax2.yaxis.set_major_locator(plt.NullLocator()) #Turns off tick marks and numbers
             ax2.set_xlim(ti, tf)
-            t_range = np.logical_and(ti < self.resp_df.index, self.resp_df.index < tf)
-            ax2.plot(self.resp_df['kPa'].index[t_range], \
-                self.p_scale_var.get()*(self.resp_df['kPa'][t_range]-self.p_offset_var.get()), \
+            t_range = np.logical_and(ti <resp_df.index, resp_df.index < tf)
+            ax2.plot(resp_df['kPa'].index[t_range], \
+                self.p_scale_var.get()*(resp_df['kPa'][t_range]-self.p_offset_var.get()), \
                 color='blue')
             box2 = ax2.get_position()
             ax2.set_position([box2.x0, box2.y0, box2.width, box2.height*0.95])
@@ -1316,34 +1259,34 @@ Muse proprietary:\n\
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
         lbl0.pack(side=tk.BOTTOM, fill=X)
-        
+
         canvas = FigureCanvasTkAgg(p, master=popup)
-#        canvas.show()
+#       canvas.draw()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
-        
-        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+
+        toolbar = NavigationToolbar2Tk(canvas, popup)
         toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, expand=1)
-        
+
         popup.mainloop()
         return None
 
     def draw_psd(self):
-        # In preparation for plotting, get the current radiobutton selection and the 
-        # corresponding initial and final times of the interval        
+        # In preparation for plotting, get the current radiobutton selection and the
+        # corresponding initial and final times of the interval
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         #print('int_value = '+str(int_value))
-        
+
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
 
-        recording = self.sessions_df.ix[current_index]['recording']
-        title = self.sessions_df.ix[current_index]['title']
-        subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+        recording = sessions_df.iloc[current_index]['recording']
+        title = sessions_df.iloc[current_index]['title']
+        subject = sessions_df.iloc[current_index]['subject']
+        duration = sessions_df.iloc[current_index]['duration']
+        date_time = sessions_df.iloc[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -1354,54 +1297,57 @@ Muse proprietary:\n\
         graph_title = 'Power Spectral Density at '+str(d)+'\n'\
             +recording+' ('+subject+') '+title+'\n'\
             +interval_string
-        i = int(ti*self.fs)
-        f = int(tf*self.fs)
-        i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
-        signal = self.raw_df[d][i_range]
-        
+        #print('ti=', ti, ', tf=', tf)
+        i = int(ti*fs)
+        f = int(tf*fs)
+        #print('i=', i, ', f=', f)
+
+        i_range = np.logical_and(i < raw_df.index, raw_df.index < f)
+        signal = raw_df[d][i_range]
+
 #        xdata,ydata = [range(50)],[range(50)] #get some data from somewhere
 #        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220, color="black")
 #        Pxx, freqs = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
         ydata, xdata = m.psd(signal, NFFT=1024, noverlap=512, Fs=220)
 #        ydata, xdata = m.psd(signal, NFFT=2048, noverlap=512, Fs=220)
-        
+
 #        self.ax.set_ylim([self.spin_var[3][0].get(), self.spin_var[3][1].get()])
-        popup = WinPsd(self)
+        popup = WinPsd(pv)
         popup.geometry('720x480') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Power Spectral Density")
-        
+
         popup.draw(xdata, ydata, graph_title)
-        
+
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
         lbl0.pack(side=tk.BOTTOM, fill=X)
-        
+
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
-        
-        
+
+
     def draw_raw_eeg(self):
         popup = tk.Tk()
         popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Raw EEG")
         p = plt.figure()
         self.ax = plt.subplot(111)
-        # In preparation for plotting, get the current radiobutton selection and the 
-        # corresponding initial and final times of the interval        
+        # In preparation for plotting, get the current radiobutton selection and the
+        # corresponding initial and final times of the interval
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         #print('int_value = '+str(int_value))
-        
+
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
 
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width, box.height*0.9])
 
-        recording = self.sessions_df.ix[current_index]['recording']
-        title = self.sessions_df.ix[current_index]['title']
-        subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+        recording = sessions_df.iloc[current_index]['recording']
+        title = sessions_df.iloc[current_index]['title']
+        subject = sessions_df.iloc[current_index]['subject']
+        duration = sessions_df.iloc[current_index]['duration']
+        date_time = sessions_df.iloc[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -1412,10 +1358,10 @@ Muse proprietary:\n\
         plt.xlabel('samples (220 per second)')
         plt.ylabel('voltage (microvolts)')
         d = self.data_source_var.get()
-        i = int(ti*self.fs)
-        f = int(tf*self.fs)
-        i_range = np.logical_and(i < self.raw_df.index, self.raw_df.index < f)
-        self.ax.plot(self.raw_df[d][i_range].index, self.raw_df[d][i_range], color=plotcolor[d], label=plotlabel[d])
+        i = int(ti*fs)
+        f = int(tf*fs)
+        i_range = np.logical_and(i < raw_df.index, raw_df.index < f)
+        self.ax.plot(raw_df[d][i_range].index, raw_df[d][i_range], color=plotcolor[d], label=plotlabel[d])
 
         if self.fixed_var[4].get() == 1:
             self.ax.set_ylim([self.spin_var[4][0].get(), self.spin_var[4][1].get()])
@@ -1427,35 +1373,36 @@ Muse proprietary:\n\
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
         lbl0.pack(side=tk.BOTTOM, fill=X)
-        
+
         canvas = FigureCanvasTkAgg(p, master=popup)
-        canvas.show()
+        canvas.draw()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
-        
-        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+
+        toolbar = NavigationToolbar2Tk(canvas, popup)
         toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, expand=1)
-        
+
         popup.mainloop()
         return None
 
     def draw_radar_chart(self):
         """
         In a new pop-up window, draws a radar chart with positions lb, lf, rf, rb
-        arranged around a circle. Each of the five are plotted with a unique color:
+        arranged around a circle. Each of five frequency bands are plotted:
         delta: blue, theta: cyan, alpha: green, beta: orange, gamma: red.
         Power values are indicated by the radial lengths of the vertices of a polygon.
-        
+
         Median values are plotted for relative power, mean values for absolute power.
         Range of median relative power is [0:1]; range of mean absolute power is [0:100].
         """
-        theta = radar_factory(4, frame='circle')
+
+        #theta = radar_factory(4, frame='circle')
 
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         if int_value > 0:
-            #interval_string = self.sessions_df.ix[current_index]['interval'+str(int_value)]
+            #interval_string = sessions_df.iloc[current_index]['interval'+str(int_value)]
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
         else:
@@ -1470,132 +1417,141 @@ Muse proprietary:\n\
             popup.wm_title("Radar Chart")
 #            graph_title = 'EEG Inverse Log of Mean Absolute Band Power'
             graph_title = 'EEG Mean Absolute Band Power'
-            t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
+            t_range = np.logical_and(ti < absolute_df.index, absolute_df.index < tf) # t_range is the same for all relative bands
 #            print('t_range for absolute')
 #            print(t_range)
             values_list = []
-            values_array = []
+            values_array_list = []
             for i in range(len(freqbands)):
                 for j in range(len(locations[i])-1, 0, -1): # omit average value; step down for proper radar display
-                    values_list.append(30*(self.absolute_df[freqbands[i]][t_range][locations[i][j]]+1.667).mean())
-#                    values_list.append(50*(self.absolute_df[freqbands[i]][t_range][locations[i][j]]+1).mean())
-#                    print('absolute values_list')
-#                    print(values_list)
-                values_array.append(values_list)
-                values_list = []
+                    values_list.append(30*(absolute_df[freqbands[i]][t_range][locations[i][j]]+1.667).mean())
+                values_list.append(values_list[0])
+                print('absolute values_list', values_list)
+                values_array_list.append(values_list)
+                values_list = [] # Clear list before continuing for loop
         elif self.rel_abs_var.get()=='relative': # Relative values
             popup.wm_title("Radar Charts")
             graph_title = 'EEG Mean Relative Band Power'
-            t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
+            t_range = np.logical_and(ti < relative_df.index, relative_df.index < tf) # t_range is the same for all relative bands
 #            print('t_range for relative')
 #            print(t_range)
             values_list = []
-            values_array = []
+            values_array_list = []
             for i in range(len(freqbands)):
                 for j in range(len(locations[i])-1, 0, -1): # omit average value; step down for proper radar display
-                    values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].mean())
-#                    print('relative values_list')
-#                    print(values_list)
-                values_array.append(values_list)
-                values_list = []
-        data = values_array
-#        print('data=')
-#        print(data)
-        spoke_labels = ['rb', 'rf', 'lf', 'lb']
-        
-    
-        p = plt.figure(figsize=(6, 6))
-        p.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
-    
-        colors = ['blue', 'cyan', 'green', 'orange', 'magenta']
-        
-        self.ax = plt.subplot(111, projection='radar')
+                    values_list.append(relative_df[freqbands[i]][t_range][locations[i][j]].mean())
+                values_list.append(values_list[0])
+                #print('relative values_list', values_list)
+                values_array_list.append(values_list)
+                values_list = [] # Clear list before continuing for loop
+        else:
+            print('unknown value in rel_abs_var')
+        #print('values_array_list = ', values_array_list)
 
-        # Adjust the height of the window so that title and legend are fully visible        
+        data = np.array(values_array_list)
+        #print('data = ', data)
+        #print('data.shape = ', data.shape)
+        spoke_labels = ['rb', 'rf', 'lf', 'lb']
+        angles = np.pi/4 + np.linspace(0, 2*np.pi, 4, endpoint=False)
+        theta_list = list(angles)
+        theta_list.append(theta_list[0])
+        #theta_list = np.concatenate((theta_list, [theta_list[0]]))
+        #print('theta_list = ', theta_list)
+        theta = np.array(theta_list)
+        #print('theta = ', theta)
+        #print('theta.shape = ', theta.shape)
+
+        #p = plt.figure(figsize=(6, 6))
+        #p.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
+
+        p = plt.figure(figsize=(7, 6))
+        p.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
+
+        colors = ['blue', 'cyan', 'green', 'orange', 'magenta']
+
+        self.ax = plt.subplot(111, polar=True)
+
+        # Adjust the height of the window so that title and legend are fully visible
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.95, box.height*0.95])
 
         if self.rel_abs_var.get()=='absolute': # Absolute values
             plt.rgrids([20, 40, 60, 80])
-            #plt.ylim(0, 100)
-            if self.fixed_var[6].get() == 1:
+            if self.fixed_var[6].get() == 1: #Get limits from Settings tab
                 self.ax.set_ylim([self.spin_var[6][0].get(), self.spin_var[6][1].get()])
         elif self.rel_abs_var.get()=='relative': # Relative values
             plt.rgrids([0.2, 0.4, 0.6, 0.8])
-            #plt.ylim(0, 0.8)
-            if self.fixed_var[5].get() == 1:
+            if self.fixed_var[5].get() == 1: # Get limits from Settings tab
                 self.ax.set_ylim([self.spin_var[5][0].get(), self.spin_var[5][1].get()])
 #        plt.rgrids([0.2, 0.4, 0.6, 0.8])
         self.ax.set_title(interval_string, weight='bold', size='medium', position=(0.5, 1.1),
                      horizontalalignment='center', verticalalignment='center')
         i = 0
+        #print('data.shape = ', data.shape)
+        #print('theta.shape = ', theta.shape)
+
         for d, color in zip(data, colors):
             self.ax.plot(theta, d, color=color)
-            """
-            if i < 4:
-#               print('theta['+str(i)+']='+str('%.2f' % theta[i])+' d='+str('%.3f' % d[i])+' color='+str(color))
-                print('theta['+str(i)+']='+str('%.2f' % theta[i]))
-                print(d)
-            i += 1
-            """
             self.ax.fill(theta, d, facecolor=color, alpha=0.25)
-        
-        self.ax.set_varlabels(spoke_labels)
-        
-        
+
+        #print('angles=', angles)
+
+        self.ax.set_thetagrids(theta * 180/np.pi, spoke_labels)
+
+        #self.ax.set_varlabels(spoke_labels)
+
+
         # add legend relative to top-left plot
         plt.subplot(1, 1, 1)
         labels = ('Delta', 'Theta', 'Alpha', 'Beta', 'Gamma')
         legend = plt.legend(labels, loc=(0.9, .95), labelspacing=0.2)
-        plt.figtext(0.04, 0.82, 'lf ~ left front (FP1)\n\
-rf ~ right front (FP2)\n\
-lb ~ left back (TP9)\n\
-rb ~ right back (TP10)', ha='left', color='black', size='medium')
+        ###plt.figtext(0.04, 0.82, ha='left', color='black', size='medium')
         plt.setp(legend.get_texts(), fontsize='medium')
         plt.setp(legend.get_lines(), linewidth='3')
 #        plt.figtext(0.5, 0.965, 'Median Relative Power of Five Frequency Bands',
 #                    ha='center', color='black', weight='bold', size='large')
-        title = self.sessions_df.ix[current_index]['title']
-        recording = self.sessions_df.ix[current_index]['recording']
-        subject = self.sessions_df.ix[current_index]['subject']
+        title = sessions_df.iloc[current_index]['title']
+        recording = sessions_df.iloc[current_index]['recording']
+        subject = sessions_df.iloc[current_index]['subject']
         plt.title(graph_title+'\n'\
             +recording+' ('+subject+') '+title+'\n'\
             +interval_string, fontsize = 'large')
+        self.ax.grid(True) ### <---
         plt.show()
         canvas = FigureCanvasTkAgg(p, master=popup)
-        canvas.show()
+        canvas.draw()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
-        
-        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+
+        toolbar = NavigationToolbar2Tk(canvas, popup)
         toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, expand=1)
         popup.mainloop()
-            
+
     def draw_table(self):
         """
         In a new pop-up window, draws a text box and fills it with lines of data
         corresponding to the selected interval of a session and the selection of
-        relative or absolute power. Dropdown menu options include mean, median, 
+        relative or absolute power. Dropdown menu options include mean, median,
         standard deviation, and inverse log (for absolute power only).
-        
+
         EEG values for each of four sensors are in four rows: lb, lf, rf, rb.
-        
+
         There are five columns of data: delta, theta, alpha, beta, gamma.
         Values are separated by tabs to facilitate pasting in Excel spreadsheets.
-       
+
         The values of table_type are 'mean', 'median', 'standard deviation', and 'inverse log' .
         """
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         if int_value > 0:
-            #interval_string = self.sessions_df.ix[current_index]['interval'+str(int_value)]
+            #interval_string = sessions_df.iloc[current_index]['interval'+str(int_value)]
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
         else:
             interval_string = 'full session'
-        recording = self.sessions_df.ix[current_index]['recording']
-        subject = self.sessions_df.ix[current_index]['subject']
+        recording = sessions_df.iloc[current_index]['recording']
+        subject = sessions_df.iloc[current_index]['subject']
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
 #        band_vals = []
@@ -1606,64 +1562,64 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         abs_rel = self.rel_abs_var.get()
         if abs_rel=='absolute': # Display absolute values normalized to range [0:100] in table
             popup.wm_title("Table of Absolute EEG values")
-            t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
+            t_range = np.logical_and(ti < absolute_df.index, absolute_df.index < tf) # t_range is the same for all relative bands
             if table_type == 'mean': # columns are delta, theta, alpha, beta, gamma
                                # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean())
+                        values_list.append(absolute_df[freqbands[i]][t_range][locations[i][j]].mean())
                     values_array.append(values_list)
                     values_list = []
             elif table_type == 'median': # columns are delta, theta, alpha, beta, gamma
                                # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].median())
+                        values_list.append(absolute_df[freqbands[i]][t_range][locations[i][j]].median())
                     values_array.append(values_list)
                     values_list = []
             elif table_type == 'standard deviation': # columns are delta, theta, alpha, beta, gamma
                                # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(self.absolute_df[freqbands[i]][t_range][locations[i][j]].std())
+                        values_list.append(absolute_df[freqbands[i]][t_range][locations[i][j]].std())
                     values_array.append(values_list)
                     values_list = []
             elif table_type == 'inverse log': # columns are delta, theta, alpha, beta, gamma
                                    # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(np.power(10,self.absolute_df[freqbands[i]][t_range][locations[i][j]].mean()))
+                        values_list.append(np.power(10,absolute_df[freqbands[i]][t_range][locations[i][j]].mean()))
                     values_array.append(values_list)
                     values_list = []
         elif abs_rel=='relative': # Display relative values in table
             popup.wm_title("Table of Relative EEG values")
-            t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
+            t_range = np.logical_and(ti < relative_df.index, relative_df.index < tf) # t_range is the same for all relative bands
             if table_type == 'mean': # columns are delta, theta, alpha, beta, gamma
                                # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].mean())
+                        values_list.append(relative_df[freqbands[i]][t_range][locations[i][j]].mean())
                     values_array.append(values_list)
                     values_list = []
             elif table_type == 'median': # columns are delta, theta, alpha, beta, gamma
                                # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].median())
+                        values_list.append(relative_df[freqbands[i]][t_range][locations[i][j]].median())
                     values_array.append(values_list)
                     values_list = []
             elif table_type == 'standard deviation': # columns are delta, theta, alpha, beta, gamma
                                # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(self.relative_df[freqbands[i]][t_range][locations[i][j]].std())
+                        values_list.append(relative_df[freqbands[i]][t_range][locations[i][j]].std())
                     values_array.append(values_list)
                     values_list = []
-            elif table_type == 'inverse log': # columns are delta, theta, alpha, beta, gamma 
+            elif table_type == 'inverse log': # columns are delta, theta, alpha, beta, gamma
                                    # rows are lb, lf, rf, rb
                 for j in range(1, len(locations)): # loop over 4 locations, ignoring avg
                     for i in range(len(freqbands)):
-                        values_list.append(np.power(10,self.relative_df[freqbands[i]][t_range][locations[i][j]].mean()))
+                        values_list.append(np.power(10,relative_df[freqbands[i]][t_range][locations[i][j]].mean()))
                     values_array.append(values_list)
                     values_list = []
         dataline = abs_rel+' '+ table_type+' values for '+recording+' ('+ subject+', '+ interval_string+')\n'
@@ -1679,9 +1635,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         txt1 = Text(popup, width=70, height=9, wrap=tk.WORD)
         txt1.insert(END, dataline+header+values)
         txt1.grid(row=1, column=1, sticky=W)
-        
+
     def band(self, key):
-        print('key=',key)
+        #print('canvas.draw()',key)
         if key in d_bands:
             return 'delta'
         elif key in t_bands:
@@ -1698,7 +1654,7 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
     def med_mean_legend(self, avg_list, d):
         """
         Add requested median or mean legend to time-series graph.
-        avg_list is list of either median or mean values. 
+        avg_list is list of either median or mean values.
         """
         i = len(avg_list)
         self.ax.annotate(avg_list, xy=(1.01, 0.15),  xycoords='axes fraction',
@@ -1710,35 +1666,34 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         """
         In a new pop-up window, draw a set of axes with labels and title,
         and plot data for variables requested.
-        
+
         Median values are plotted for relative values; mean values for absolute.
-        
+
         Use single letter commands to plot graphs of median values
         (d=delta, t=theta, a=alpha, b=beta, g=gamma).
-        
+
         Variables include j=jaw clench, k=blink, c=concentration, m=mellow.
-        
+
         When respiration and breathing data are available, plots cmay
         include, p=breath, v=heart
-        
+
         """
-        
-        global current_index
+
         #print('current_index = '+str(current_index))
-    
+
         popup = tk.Tk()
         popup.geometry('700x460') # Set dimensions of popup window to 800x500 pixels
         popup.wm_title("Time Series graph")
         p = plt.figure()
         self.ax = plt.subplot(111)
-        # In preparation for plotting, get the current radiobutton selection and the 
-        # corresponding initial and final times of the interval        
+        # In preparation for plotting, get the current radiobutton selection and the
+        # corresponding initial and final times of the interval
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         #print('int_value = '+str(int_value))
-        
+
         ti = float(self.sva[int_value][1].get())
         tf = float(self.sva[int_value][2].get())
-        
+
         graph_title = ''
         i=0
 
@@ -1753,104 +1708,107 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                     band = self.band(d)
                     #print('d=',d)
                     #print('band=',band)
-                
-                    if self.rel_abs_var.get()=='absolute': # Absolute values
-                        t_range = np.logical_and(ti < self.absolute_df.index, self.absolute_df.index < tf) # t_range is the same for all relative bands
-                        graph_title = 'EEG Absolute Power'
+
+                    if self.eeg_check_value.get(): # EEG data exists
+                        if self.rel_abs_var.get()=='absolute': # Absolute values
+                            t_range = np.logical_and(ti < absolute_df.index, absolute_df.index < tf) # t_range is the same for all relative bands
+                            graph_title = 'EEG Absolute Power'
+                            plt.xlabel('time (s)')
+                            plt.ylabel('absolute power (Bels)')
+                            if self.fixed_var[1].get() == 1:
+                                self.ax.set_ylim([self.spin_var[1][0].get(), self.spin_var[1][1].get()])
+                            self.ax.plot(absolute_df[band].index[t_range], absolute_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
+                            if self.med_mean_var.get()=='median':
+                                median_val = absolute_df[band][t_range][d].median()
+                                std_val = absolute_df[band][t_range][d].std()
+                                plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
+                                the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                                self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                            xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                            color=plotcolor[d], backgroundcolor='white',
+                                            horizontalalignment='left', verticalalignment='top')
+                            elif self.med_mean_var.get()=='mean':
+                                mean_val = absolute_df[band][t_range][d].mean()
+                                std_val = absolute_df[band][t_range][d].std()
+                                plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
+                                the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                                #print(the_median)
+                                #median_list.append(the_median)
+                                self.ax.annotate(the_mean, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                            xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                            color=plotcolor[d], backgroundcolor='white',
+                                            horizontalalignment='left', verticalalignment='top')
+                            i+=1
+                        elif self.rel_abs_var.get()=='relative': # Relative values
+                            t_range = np.logical_and(ti < relative_df.index, relative_df.index < tf) # t_range is the same for all relative bands
+                            graph_title = 'EEG Relative Power'
+                            plt.xlabel('time (s)')
+                            plt.ylabel('relative power (fraction)')
+                            if self.fixed_var[0].get() == 1:
+                                self.ax.set_ylim([self.spin_var[0][0].get(), self.spin_var[0][1].get()])
+                            #print('d='+str(d))
+                            self.ax.plot(relative_df[band].index[t_range], relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
+                            if self.med_mean_var.get()=='median':
+                                median_val = relative_df[band][t_range][d].median()
+                                std_val = relative_df[band][t_range][d].std()
+                                plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
+                                the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                                self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                            xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                            color=plotcolor[d], backgroundcolor='white',
+                                            horizontalalignment='left', verticalalignment='top')
+                            elif self.med_mean_var.get()=='mean':
+                                mean_val = relative_df[band][t_range][d].mean()
+                                std_val = relative_df[band][t_range][d].std()
+                                plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
+                                the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
+                                #print(the_median)
+                                #median_list.append(the_median)
+                                self.ax.annotate(the_mean, xy=(1.01, 0.15),  xycoords='axes fraction',
+                                            xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                            color=plotcolor[d], backgroundcolor='white',
+                                            horizontalalignment='left', verticalalignment='top')
+                            i+=1
+                    elif q in {'k'}:
+                        d = str(q)
+                        print('d=',d)
+                        t_range = np.logical_and(ti < user_df.index, user_df.index < tf)
+                        self.ax.plot(user_df[d].index[t_range], \
+                            self.k_scale_var.get()*(user_df[d][t_range] - self.k_offset_var.get()), \
+                            color=plotcolor[d], label=plotlabel[d])
+                    elif q in {'j'}:
+                        d = str(q)
+                        print('d=',d)
+                        t_range = np.logical_and(ti < user_df.index, user_df.index < tf)
+                        self.ax.plot(user_df[d].index[t_range], \
+                            self.j_scale_var.get()*(user_df[d][t_range] - self.j_offset_var.get()), \
+                            color=plotcolor[d], label=plotlabel[d])
+                    """ # Dealing with 'c' and 'm' is problematic; postpone implementation for now
+                    elif q in {'c', 'm'}:
+                        d = str(q)
+                        #print('d=',d)
+                        graph_title = "Muse Values for 'concentration' and 'mellow'"
                         plt.xlabel('time (s)')
-                        plt.ylabel('absolute power (Bels)')
-                        if self.fixed_var[1].get() == 1:
-                            self.ax.set_ylim([self.spin_var[1][0].get(), self.spin_var[1][1].get()])
-                        self.ax.plot(self.absolute_df[band].index[t_range], self.absolute_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
-                        if self.med_mean_var.get()=='median':
-                            median_val = self.absolute_df[band][t_range][d].median()
-                            std_val = self.absolute_df[band][t_range][d].std()
-                            plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
-                            the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
-                            self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
-                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                        color=plotcolor[d], backgroundcolor='white',
-                                        horizontalalignment='left', verticalalignment='top')
-                        elif self.med_mean_var.get()=='mean':
-                            mean_val = self.absolute_df[band][t_range][d].mean()
-                            std_val = self.absolute_df[band][t_range][d].std()
-                            plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
-                            the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
-                            #print(the_median)
-                            #median_list.append(the_median)
-                            self.ax.annotate(the_mean, xy=(1.01, 0.15),  xycoords='axes fraction',
-                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                        color=plotcolor[d], backgroundcolor='white',
-                                        horizontalalignment='left', verticalalignment='top')
+                        plt.ylabel('fraction')
+                        t_range = np.logical_and(ti < user_df.index, user_df.index < tf)
+                        self.ax.plot(user_df[d].index[t_range], user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
+                        mean_val = user_df[d][t_range][d].mean()
+                        plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
+                        the_mean = 'mean '+str('%.1f' % mean_val)
+                        mean_list.append(the_mean)
+                        #print(the_mean)
+                        self.ax.annotate(mean_list[i], xy=(1.01, 0.15),  xycoords='axes fraction',
+                                    xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
+                                    color=plotcolor[d], backgroundcolor='white',
+                                    horizontalalignment='left', verticalalignment='top')
                         i+=1
-                    elif self.rel_abs_var.get()=='relative': # Relative values
-                        t_range = np.logical_and(ti < self.relative_df.index, self.relative_df.index < tf) # t_range is the same for all relative bands
-                        graph_title = 'EEG Relative Power'
-                        plt.xlabel('time (s)')
-                        plt.ylabel('relative power (fraction)')
-                        if self.fixed_var[0].get() == 1:
-                            self.ax.set_ylim([self.spin_var[0][0].get(), self.spin_var[0][1].get()])
-                        #print('d='+str(d))
-                        self.ax.plot(self.relative_df[band].index[t_range], self.relative_df[band][t_range][d], color=plotcolor[d], label=plotlabel[d])
-                        if self.med_mean_var.get()=='median':
-                            median_val = self.relative_df[band][t_range][d].median()
-                            std_val = self.relative_df[band][t_range][d].std()
-                            plt.axhline(median_val, 0, 1, linewidth=1, color=plotcolor[d])
-                            the_median = 'median '+str('%.2f' % median_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
-                            self.ax.annotate(the_median, xy=(1.01, 0.15),  xycoords='axes fraction',
-                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                        color=plotcolor[d], backgroundcolor='white',
-                                        horizontalalignment='left', verticalalignment='top')
-                        elif self.med_mean_var.get()=='mean':
-                            mean_val = self.relative_df[band][t_range][d].mean()
-                            std_val = self.relative_df[band][t_range][d].std()
-                            plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
-                            the_mean = 'mean '+str('%.2f' % mean_val)+u"\u00B1"+str('%.2f' % std_val) # median with +/- symbol for standard deviation
-                            #print(the_median)
-                            #median_list.append(the_median)
-                            self.ax.annotate(the_mean, xy=(1.01, 0.15),  xycoords='axes fraction',
-                                        xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                        color=plotcolor[d], backgroundcolor='white',
-                                        horizontalalignment='left', verticalalignment='top')
-                        i+=1
-                elif q in {'k'}:
-                    d = str(q)
-                    print('d=',d)
-                    t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
-                    self.ax.plot(self.user_df[d].index[t_range], \
-                        self.k_scale_var.get()*(self.user_df[d][t_range] - self.k_offset_var.get()), \
-                        color=plotcolor[d], label=plotlabel[d])
-                elif q in {'j'}:
-                    d = str(q)
-                    print('d=',d)
-                    t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
-                    self.ax.plot(self.user_df[d].index[t_range], \
-                        self.j_scale_var.get()*(self.user_df[d][t_range] - self.j_offset_var.get()), \
-                        color=plotcolor[d], label=plotlabel[d])
-                elif q in {'c', 'm'}:
-                    d = str(q)
-                    #print('d=',d)
-                    graph_title = "Muse Values for 'concentration' and 'mellow'"
-                    plt.xlabel('time (s)')
-                    plt.ylabel('fraction')
-                    t_range = np.logical_and(ti < self.user_df.index, self.user_df.index < tf) 
-                    self.ax.plot(self.user_df[d].index[t_range], self.user_df[d][t_range], color=plotcolor[d], label=plotlabel[d])
-                    mean_val = self.user_df[d][t_range][d].mean()
-                    plt.axhline(mean_val, 0, 1, linewidth=1, color=plotcolor[d])
-                    the_mean = 'mean '+str('%.1f' % mean_val)
-                    mean_list.append(the_mean)
-                    #print(the_mean)
-                    self.ax.annotate(mean_list[i], xy=(1.01, 0.15),  xycoords='axes fraction',
-                                xytext=(1.05, 0.95-i*0.1), textcoords='axes fraction',
-                                color=plotcolor[d], backgroundcolor='white',
-                                horizontalalignment='left', verticalalignment='top')
-                    i+=1
+                    """
                 elif q in {'v'}:
                     d = str(q)
                     #print('d=',d)
-                    t_range = np.logical_and(ti < self.cardio_df.index, self.cardio_df.index < tf) 
-                    self.ax.plot(self.cardio_df[cardioresp[d]].index[t_range], \
-                        self.v_scale_var.get()*(self.cardio_df[cardioresp[d]][t_range]-self.v_offset_var.get()), \
+                    t_range = np.logical_and(ti < cardio_df.index, cardio_df.index < tf)
+                    self.ax.plot(cardio_df[cardioresp[d]].index[t_range], \
+                        self.v_scale_var.get()*(cardio_df[cardioresp[d]][t_range]-self.v_offset_var.get()), \
                         color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Electrocardiogram'
                     plt.xlabel('time (s)')
@@ -1858,9 +1816,9 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                 elif q in {'p'}:
                     d = str(q)
                     #print('d=',d)
-                    t_range = np.logical_and(ti < self.resp_df.index, self.resp_df.index < tf)
-                    self.ax.plot(self.resp_df[cardioresp[d]].index[t_range], \
-                        self.p_scale_var.get()*(self.resp_df[cardioresp[d]][t_range]-self.p_offset_var.get()), \
+                    t_range = np.logical_and(ti < resp_df.index, resp_df.index < tf)
+                    self.ax.plot(resp_df[cardioresp[d]].index[t_range], \
+                        self.p_scale_var.get()*(resp_df[cardioresp[d]][t_range]-self.p_offset_var.get()), \
                         color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Respiration'
                     plt.xlabel('time (s)')
@@ -1868,24 +1826,24 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
                 elif q in {'s'}:
                     d = str(q)
                     #print('d=',d)
-                    t_range = np.logical_and(ti < self.button_df.index, self.button_df.index < tf)
-                    self.ax.plot(self.button_df[cardioresp[d]].index[t_range], \
-                        self.s_scale_var.get()*(self.button_df[cardioresp[d]][t_range]-self.s_offset_var.get()), \
+                    t_range = np.logical_and(ti < button_df.index, button_df.index < tf)
+                    self.ax.plot(button_df[cardioresp[d]].index[t_range], \
+                        self.s_scale_var.get()*(button_df[cardioresp[d]][t_range]-self.s_offset_var.get()), \
                         color=plotcolor[d], label=plotlabel[d])
                     graph_title = 'Button Press'
                     plt.xlabel('time (s)')
                     plt.ylabel('current (arbitrary units)')
-                
-        # Adjust the width of the window so that legend is visible        
+
+        # Adjust the width of the window so that legend is visible
         box = self.ax.get_position()
         self.ax.set_position([box.x0, box.y0, box.width*0.75, box.height*0.9])
         self.ax.legend(loc='upper left', bbox_to_anchor=(1,0.25)) # Place to the right of the graph, near bottom
-        # Get strings from the sessions_df dataframe to use in the graph title        
-        recording = self.sessions_df.ix[current_index]['recording']
-        title = self.sessions_df.ix[current_index]['title']
-        subject = self.sessions_df.ix[current_index]['subject']
-        duration = self.sessions_df.ix[current_index]['duration']
-        date_time = self.sessions_df.ix[current_index]['date_time']
+        # Get strings from the sessions_df dataframe to use in the graph title
+        recording = sessions_df.iloc[current_index]['recording']
+        title = sessions_df.iloc[current_index]['title']
+        subject = sessions_df.iloc[current_index]['subject']
+        duration = sessions_df.iloc[current_index]['duration']
+        date_time = sessions_df.iloc[current_index]['date_time']
         if int_value > 0:
             # Ensure that graph title includes interval name as entered
             interval_string = self.sva[self.interval.get()][0].get()
@@ -1900,32 +1858,32 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         lbl0 = ttk.Label(popup, justify=LEFT, anchor=W, \
         text=recording+' recorded '+str(date_time)+' ('+str('%.0f' % duration)+' seconds'+')')
         lbl0.pack(side=tk.BOTTOM, fill=X)
-        
+
         canvas = FigureCanvasTkAgg(p, master=popup)
-        canvas.show()
+        canvas.draw()
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         btn = ttk.Button(popup, text="Close", command=popup.destroy)
         btn.pack(side=tk.RIGHT)
-        
-        toolbar = NavigationToolbar2TkAgg(canvas, popup)
+
+        toolbar = NavigationToolbar2Tk(canvas, popup)
         toolbar.update()
         canvas._tkcanvas.pack(side=tk.TOP, expand=1)
-        
+
         popup.mainloop()
         return None
-    
+
     def save_session_data(self):
         """
         Updates the Excel file EEG_CardioRespSessions.xls in C:/MedRec/
         including session name, t_initial and t_final.
-        
+
         Presently, CANNOT UPDATE description text on Session tab.
         """
-        #self.sessions_df.to_excel(self.path+self.sessions_file, \
+        #sessions_df.to_excel(self.path+self.sessions_file, \
         #sheet_name='Sheet1', engine='xlsxwriter', merge_cells=False)
-        self.sessions_df.to_excel(self.sessions_file, \
+        sessions_df.to_excel(self.sessions_file, \
         sheet_name='Sheet1', engine='xlsxwriter', merge_cells=False)
-            
+
     def update_value(self, sv, i, j):
         """
         Updates sessions_df dataframe values whenever entries in Entry boxes are changed.
@@ -1934,46 +1892,48 @@ rb ~ right back (TP10)', ha='left', color='black', size='medium')
         Values of j range from 0 - 2, where j=0 ~ interval, j=1 ~ ti, j=2 ~ tf
         """
         if j==0:
-            self.sessions_df.set_value(current_index, 'interval'+str(i), self.sva[i][0].get())
-            #print('new name = '+str(self.sessions_df.get_value(current_index, 'interval'+str(i))))
+            sessions_df.at[current_index, 'interval'+str(i)] = str(self.sva[i][0].get())
+            #print('new name = '+str(sessions_df.at[current_index, 'interval'+str(i)]))
         elif j==1:
-            #print('ti = '+str(self.sessions_df.get_value(current_index, 'ti'+str(i))))
+            #print('ti = '+str(sessions_df.at[current_index, 'ti'+str(i)]))
             try: # This prevents crashing when user tries to edit an NaN value for t_initial or t_final
-                self.sessions_df.set_value(current_index, 'ti'+str(i), self.sva[i][1].get())
+                sessions_df.at[current_index, 'ti'+str(i)] = str(self.sva[i][1].get())
             except:
                 pass
                 #print('not updating ti')
-            #print('new ti = '+str(self.sessions_df.get_value(current_index, 'ti'+str(i))))
+            #print('new ti = '+str(sessions_df.at[current_index, 'ti'+str(i)]))
         elif j==2:
-            #print('new tf = '+str(self.sessions_df.get_value(current_index, 'tf'+str(i))))
+            #print('new tf = '+str(sessions_df.at[current_index, 'tf'+str(i)]))
             try:
-                self.sessions_df.set_value(current_index, 'tf'+str(i), self.sva[i][2].get())
+                sessions_df.at[current_index, 'tf'+str(i)] = str(self.sva[i][2].get())
             except:
                 pass
                 #print('not updating tf')
-            #print('new tf = '+str(self.sessions_df.get_value(current_index, 'tf'+str(i))))
+            #print('new tf = '+str(sessions_df.get_value(current_index, 'tf'+str(i))))
         self.interval.set(0)
-        
-            
+
+
     def select_graph(self):
         """
         Selects plotting routine based on graph type radiobutton selection
         """
         graph_type = self.graph_type_var.get()
+        #print('graph_type=', graph_type)
+        #"""
         if graph_type == 'timeseries':
             self.draw_graph()
         elif graph_type == 'spectrogram':
             self.draw_spectrogram()
         elif graph_type == 'psd':
             self.draw_psd()
-#            self.show_psd()
         elif graph_type == 'raweeg':
             self.draw_raw_eeg()
         elif graph_type == 'radar':
             self.draw_radar_chart()
         elif graph_type == 'table':
             self.draw_table()
-            
-         
+        #"""
+
 if __name__ == '__main__':
-    PV().mainloop()
+    pv = PV()
+    pv.mainloop()
