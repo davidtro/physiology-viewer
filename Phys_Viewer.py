@@ -1398,8 +1398,6 @@ Muse proprietary:\n\
         Range of median relative power is [0:1]; range of mean absolute power is [0:100].
         """
 
-        #theta = radar_factory(4, frame='circle')
-
         int_value = self.interval.get() # int_value represents the currently selected radiobutton
         if int_value > 0:
             #interval_string = sessions_df.iloc[current_index]['interval'+str(int_value)]
@@ -1446,23 +1444,27 @@ Muse proprietary:\n\
                 values_list = [] # Clear list before continuing for loop
         else:
             print('unknown value in rel_abs_var')
-        #print('values_array_list = ', values_array_list)
+        print('values_array_list = ', values_array_list)
 
         data = np.array(values_array_list)
-        #print('data = ', data)
-        #print('data.shape = ', data.shape)
-        spoke_labels = ['rb', 'rf', 'lf', 'lb']
+        print('data = ', data)
+        new_array = np.zeros((5, 5))
+        for i in range(len(freqbands)): # new_array is needed so that ax.plot can display lf, rf, lb, rb in correct places
+            for j in range(4):
+                new_array[i][j] = data[i][j+1]
+                new_array[i][4] = data[i][1]
+        print(new_array)
+        #print('new_array.shape = ', new_array.shape)
+        #spoke_labels = ['rb', 'rf', 'lf', 'lb']
+        spoke_labels = ['rf', 'lf', 'lb', 'rb'] # Position labels so the front/back left/right are in proper places
         angles = np.pi/4 + np.linspace(0, 2*np.pi, 4, endpoint=False)
+        #spoke_labels = ['rb', 'rf', 'lf', 'lb']
+        ##angles = 7*np.pi/4 + np.linspace(0, 2*np.pi, 4, endpoint=False)
         theta_list = list(angles)
         theta_list.append(theta_list[0])
-        #theta_list = np.concatenate((theta_list, [theta_list[0]]))
-        #print('theta_list = ', theta_list)
         theta = np.array(theta_list)
         #print('theta = ', theta)
         #print('theta.shape = ', theta.shape)
-
-        #p = plt.figure(figsize=(6, 6))
-        #p.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
 
         p = plt.figure(figsize=(7, 6))
         p.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
@@ -1487,10 +1489,10 @@ Muse proprietary:\n\
         self.ax.set_title(interval_string, weight='bold', size='medium', position=(0.5, 1.1),
                      horizontalalignment='center', verticalalignment='center')
         i = 0
-        #print('data.shape = ', data.shape)
+        #print('new_array.shape = ', new_array.shape)
         #print('theta.shape = ', theta.shape)
-
-        for d, color in zip(data, colors):
+        #for d, color in zip(data, colors):
+        for d, color in zip(new_array, colors):
             self.ax.plot(theta, d, color=color)
             self.ax.fill(theta, d, facecolor=color, alpha=0.25)
 
@@ -1698,7 +1700,7 @@ Muse proprietary:\n\
         i=0
 
         item_list = list(self.data_type_var.items())
-        mean_list = []
+        #mean_list = []
         for pair in item_list:
             if pair[1].get(): # if the corresponding checkbox is checked
                 q = pair[0] # assign q to d, t, a, b, g, p, v, c, m, j, k
