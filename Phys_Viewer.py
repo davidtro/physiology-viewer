@@ -5,7 +5,7 @@
 Created on Tue Feb 10 06:27:33 2015
 Physiology Viewer release version derived from Phys_74.py Oct 12, 2015
 
-Documentation for using the program can be found at:
+Documentation for using the program can be found at
 http://still-breathing.net/technical-details/ and
 http://still-breathing.net/software/
 
