@@ -1,7 +1,7 @@
 # physiology-viewer
 This is a suite of python programs and some example data files for displaying graphs and charts of EEG, ECG and respiration data recorded by the Muse headband and Vernier probe devices.
 
-Visit http://still-breathing.net/software for more details.
+Visit: http://still-breathing.net/software for more details.
 
 Program Files: 
 Phys_Viewer.py   This is the Physiology Viewer program. It needs to open the file EEG_CardioRespSessions.xls, which must be in the directory C:\MedRec. Data files *.h5 data files must also be in that same directory.
